@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Rust Consumer",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/kafka_consumer",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "sourceLanguages": ["rust"]
+        },
+        {
+            "name": "Debug Rust Producer",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/kafka_producer",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "sourceLanguages": ["rust"]
+        }
+    ]
+}
