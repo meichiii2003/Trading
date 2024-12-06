@@ -71,7 +71,7 @@ use crate::models::PriceUpdate;
 //     price: f64,
 // }
 
-pub async fn run_consumer(price_tx: tokio::sync::broadcast::Sender<PriceUpdate>,batch_signal_tx: tokio::sync::broadcast::Sender<()>) {
+pub async fn run_consumer(price_tx: tokio::sync::broadcast::Sender<PriceUpdate>) {
     // Initialize the Kafka consumer
     let consumer: StreamConsumer = ClientConfig::new()
         .set("group.id", "stock-price-consumer-group")
@@ -99,18 +99,18 @@ pub async fn run_consumer(price_tx: tokio::sync::broadcast::Sender<PriceUpdate>,
                     // Deserialize the payload to a Vec<PriceUpdate>
                     match serde_json::from_slice::<Vec<PriceUpdate>>(payload) {
                         Ok(batch) => {
-                            let receiver_count = batch_signal_tx.receiver_count();
-                            println!("Broadcasting batch signal to {} receivers.", receiver_count);
+                            // let receiver_count = batch_signal_tx.receiver_count();
+                            // println!("Broadcasting batch signal to {} receivers.", receiver_count);
 
-                            if receiver_count > 0 {
-                                if let Err(e) = batch_signal_tx.send(()) {
-                                    eprintln!("Failed to broadcast batch signal: {:?}", e);
-                                } else {
-                                    println!("Broadcasting batch signal to all brokers.");
-                                }
-                            } else {
-                                eprintln!("No subscribers available for batch signal.");
-                            }
+                            // if receiver_count > 0 {
+                            //     if let Err(e) = batch_signal_tx.send(()) {
+                            //         eprintln!("Failed to broadcast batch signal: {:?}", e);
+                            //     } else {
+                            //         println!("Broadcasting batch signal to all brokers.");
+                            //     }
+                            // } else {
+                            //     eprintln!("No subscribers available for batch signal.");
+                            // }
 
                             println!("Received Batch of Price Updates:");
                             for price_update in batch {

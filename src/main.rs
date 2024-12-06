@@ -17,6 +17,7 @@ mod utils;
 
 
 use std::collections::HashMap;
+use tokio::sync::Barrier;
 use tokio::sync::Mutex;
 use std::sync::Arc;
 
@@ -31,12 +32,14 @@ async fn main() {
     // 1. Initialize broadcast channel
     let buffer_size = 1000; // Buffer size for the broadcast channel
     let (price_tx, _) = tokio::sync::broadcast::channel(buffer_size); // Create the broadcast channel
-    let (batch_signal_tx, _) = tokio::sync::broadcast::channel(buffer_size);
+    //let (batch_signal_tx, _) = tokio::sync::broadcast::channel(buffer_size);
 
     // Shared tracker for brokers
-    let total_brokers=5; // Total brokers
+    let total_brokers = 5; // Total brokers
     let total_updates = 5; // Total updates in each batch
-    let tracker = Arc::new(Mutex::new(HashMap::new())); // Shared tracker
+    let updates_per_batch = 5; // Updates per batch
+    let tracker = Arc::new(Mutex::new(HashMap::new()));
+    let barrier = Arc::new(Barrier::new(total_brokers as usize)); // Create a barrier for synchronization
     
     // 2. Create brokers
     let mut broker_handles = Vec::new();
@@ -44,12 +47,15 @@ async fn main() {
     for broker_id in 1..=total_brokers {
         let mut broker = Broker::new(broker_id, price_tx.clone());
         let tracker_clone = tracker.clone();
-        let batch_signal_rx = batch_signal_tx.subscribe(); // Each broker subscribes to the batch_signal_tx
+        //let batch_signal_rx = batch_signal_tx.subscribe();
+        let barrier_clone = barrier.clone();
+
         let handle = tokio::spawn(async move {
             broker
-                .start(total_brokers, total_updates, tracker_clone, batch_signal_rx)
+                .start(total_brokers, updates_per_batch, tracker_clone, barrier_clone)
                 .await;
         });
+
         broker_handles.push(handle);
     }
     // 3. Start the Kafka consumer task
@@ -61,7 +67,7 @@ async fn main() {
 
     // 4. Start the Kafka consumer
     let consumer_handle = tokio::spawn(async move {
-        consumer::run_consumer(price_tx.clone(), batch_signal_tx.clone()).await;
+        consumer::run_consumer(price_tx.clone()).await;
     });
     
     // Wait for the consumer task to complete
