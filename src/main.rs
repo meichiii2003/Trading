@@ -22,9 +22,13 @@ use tokio::sync::Mutex;
 use std::sync::Arc;
 
 use crate::broker::broker::Broker;
+use crate::models::PriceUpdate;
+use rdkafka::producer::{FutureProducer, FutureRecord};
+use rdkafka::ClientConfig;
 
 #[tokio::main]
 async fn main() {
+    
     // // 1. Initialize communication channels
     // let (price_tx, price_rx) = mpsc::unbounded_channel();
     // let channels = CommunicationChannels::new(price_tx, price_rx);
@@ -38,7 +42,7 @@ async fn main() {
     let total_brokers = 5; // Total brokers
     //let total_updates = 5; // Total updates in each batch
     let updates_per_batch = 5; // Updates per batch
-    let tracker = Arc::new(Mutex::new(HashMap::new()));
+    let tracker: Arc<Mutex<HashMap<u32, PriceUpdate>>> = Arc::new(Mutex::new(HashMap::new()));
     let barrier = Arc::new(Barrier::new(total_brokers as usize)); // Create a barrier for synchronization
     
     // 2. Create brokers
@@ -46,14 +50,12 @@ async fn main() {
     // Start brokers first
     for broker_id in 1..=total_brokers {
         let mut broker = Broker::new(broker_id, price_tx.clone());
-        let tracker_clone = tracker.clone();
+        let producer = create_producer();
         //let batch_signal_rx = batch_signal_tx.subscribe();
-        let barrier_clone = barrier.clone();
+        let producer = create_producer(); // Assuming create_producer() returns a FutureProducer
 
         let handle = tokio::spawn(async move {
-            broker
-                .start(total_brokers, updates_per_batch, tracker_clone, barrier_clone)
-                .await;
+            broker.start(producer).await; // Start the broker
         });
 
         broker_handles.push(handle);
@@ -63,9 +65,21 @@ async fn main() {
     //     consumer::run_consumer(channels.price_tx.clone()).await;
     // });
     // 3. Initialize batch signal channel
-    //let (batch_signal_tx, _) = tokio::sync::broadcast::channel(buffer_size); // Create the batch signal channel
+    // Function to create a Kafka producer
+    fn create_producer() -> FutureProducer {
+        ClientConfig::new()
+            .set("bootstrap.servers", "localhost:9092")
+            .set("message.timeout.ms", "5000")
+            .create()
+            .expect("Producer creation error")
+    }
+    
+     // 4. Start the Kafka consumer
 
     // 4. Start the Kafka consumer
+    // let consumer_handle = tokio::spawn(async move {
+    //     consumer::run_consumer(price_tx.clone()).await;
+    // });
     let consumer_handle = tokio::spawn(async move {
         consumer::run_consumer(price_tx.clone()).await;
     });

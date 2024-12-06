@@ -1,4 +1,4 @@
-// models.rs
+// // models.rs
 
 use serde::{Serialize, Deserialize};
 
@@ -8,27 +8,74 @@ pub struct PriceUpdate {
     pub price: f64,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+// #[derive(Serialize, Deserialize, Debug, Clone)]
+// pub enum OrderType {
+//     MarketBuy{
+//         price: f64,
+//         take_profit: Option<f64>,
+//         stop_loss: Option<f64>,
+//     },
+//     MarketSell{
+//         price: f64,
+//         take_profit: Option<f64>,
+//         stop_loss: Option<f64>,
+//     },
+//     LimitBuy {
+//         price: f64,
+//         take_profit: Option<f64>,
+//         stop_loss: Option<f64>,
+//     },
+//     LimitSell {
+//         price: f64,
+//         take_profit: Option<f64>,
+//         stop_loss: Option<f64>,
+//     },
+// }
+
+// #[derive(Serialize, Deserialize, Debug, Clone)]
+// pub struct Order {
+//     pub order_id: u64,
+//     pub client_id: u64,
+//     pub stock_symbol: String,
+//     pub quantity: i64,
+//     pub order_type: OrderType,
+// }
+
+#[derive(Serialize, Debug, Deserialize, Clone)]
 pub enum OrderType {
-    MarketBuy,
-    MarketSell,
-    LimitBuy {
-        price: f64,
-        take_profit: Option<f64>,
-        stop_loss: Option<f64>,
-    },
-    LimitSell {
-        price: f64,
-        take_profit: Option<f64>,
-        stop_loss: Option<f64>,
-    },
+    Market,
+    Limit,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Order {
-    pub id: u64,
+#[derive(Serialize, Debug, Deserialize, Clone)]
+pub enum OrderAction {
+    Buy,
+    Sell,
+}
+
+#[derive(Serialize, Debug, Deserialize, Clone)]
+pub enum OrderStatus {
+    Pending,
+    Completed,
+    Canceled,
+}
+
+#[derive(Serialize, Debug, Deserialize, Clone)]
+pub struct KafkaOrderRequest {
+    pub broker_id: u64,
     pub client_id: u64,
+    pub order_id: String,
     pub stock_symbol: String,
-    pub quantity: i64,
     pub order_type: OrderType,
+    pub order_action: OrderAction,
+    pub price: f64,
+    pub quantity: usize,
+    pub status: OrderStatus,
+}
+
+#[derive(Serialize, Debug, Deserialize, Clone)]
+pub struct BrokerOrderRecord {
+    pub order_id: String,
+    pub stop_loss: Option<f64>,
+    pub take_profit: Option<f64>,
 }
