@@ -44,42 +44,14 @@
             let id = self.id;
             let mut price_rx = self.price_rx.resubscribe();
             
-            // Task to listen for batch signals and reset tracker
-            // tokio::spawn({
-            //     let tracker_clone = tracker.clone();
-            //     let barrier_clone = barrier.clone();
-    
-            //     async move {
-            //         while let Ok(_) = batch_signal_rx.recv().await {
-            //             barrier_clone.wait().await; // Synchronize before resetting
-    
-            //             // Reset tracker for all brokers
-            //             {
-            //                 let mut tracker_guard = tracker_clone.lock().await;
-            //                 // for broker_id in 1..=total_brokers {
-            //                 //     tracker_guard.insert(broker_id, 0);
-            //                 // }
-            //                 // println!("Broker {} reset tracker for new batch.", id);
-            //                 tracker_guard.insert(1,0);
-            //                 tracker_guard.insert(2,0);
-            //                 tracker_guard.insert(3,0);
-            //                 tracker_guard.insert(4,0);
-            //                 tracker_guard.insert(5,0);
-            //             }
-                        
-    
-            //             barrier_clone.wait().await; // Synchronize after resetting
-            //         }
-            //     }
-            // });
             // Task to process price updates
             tokio::spawn({
                 let tracker_clone = tracker.clone();
-                //let barrier_clone = barrier.clone();
+                let barrier_clone = barrier.clone();
     
                 async move {
                     while let Ok(price_update) = price_rx.recv().await {
-                        //barrier_clone.wait().await; // Synchronize before processing
+                        barrier_clone.wait().await; // Synchronize before processing
     
                         // Process price updates for all clients
                         for client in &clients {
@@ -93,52 +65,24 @@
                             let counter = tracker_guard.entry(id).or_insert(0);// Increment the counter for the broker
                             *counter += 1;// Increment the counter for the broker
     
-                            println!(
-                                "Broker {} processed price update: {:?} (Tracker count: {})",
-                                id, price_update, counter
-                            );
+                            // println!(
+                            //     "Broker {} processed price update: {:?} (Tracker count: {})",
+                            //     id, price_update, counter
+                            // );
     
                             // Check if all brokers have completed processing
                             if tracker_guard.len() == total_brokers as usize
                                 && tracker_guard.values().all(|&count| count == total_updates as usize)
                             {
                                 println!("All brokers received all price updates for the batch.");
-                                // let mut tracker_guard = tracker_clone.lock().await;
-                                // for broker_id in 1..=total_brokers {
-                                //     tracker_guard.insert(broker_id, 0);
-                                // }
-                                // println!("Broker {} reset tracker for new batch.", id);
                                 tracker_guard.clear();
                             }
                         }
     
-                        //barrier_clone.wait().await; // Synchronize after processing
+                        barrier_clone.wait().await; // Synchronize after processing
                     }
                 }
             });
-    
-            // // Task to listen for batch signals and reset tracker
-            // tokio::spawn({
-            //     let tracker_clone = tracker.clone();
-            //     let barrier_clone = barrier.clone();
-    
-            //     async move {
-            //         while let Ok(_) = batch_signal_rx.recv().await {
-            //             barrier_clone.wait().await; // Synchronize before resetting
-    
-            //             // Reset tracker for all brokers
-            //             {
-            //                 let mut tracker_guard = tracker_clone.lock().await;
-            //                 for broker_id in 1..=total_brokers {
-            //                     tracker_guard.insert(broker_id, 0);
-            //                 }
-            //                 println!("Broker {} reset tracker for new batch.", id);
-            //             }
-    
-            //             barrier_clone.wait().await; // Synchronize after resetting
-            //         }
-            //     }
-            // });
     
             // Main broker loop for generating orders
             loop {

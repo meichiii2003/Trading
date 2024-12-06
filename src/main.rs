@@ -36,7 +36,7 @@ async fn main() {
 
     // Shared tracker for brokers
     let total_brokers = 5; // Total brokers
-    let total_updates = 5; // Total updates in each batch
+    //let total_updates = 5; // Total updates in each batch
     let updates_per_batch = 5; // Updates per batch
     let tracker = Arc::new(Mutex::new(HashMap::new()));
     let barrier = Arc::new(Barrier::new(total_brokers as usize)); // Create a barrier for synchronization
