@@ -42,6 +42,8 @@ impl Broker {
         let clients = self.clients.clone();
         let global_order_counter = self.global_order_counter.clone(); // Access shared counter
         let broker_id = self.id;
+
+        // Task to listen for price updates
         let mut price_rx = self.price_rx.resubscribe();
         tokio::spawn({
             let stock_data = stock_data.clone();
@@ -60,7 +62,8 @@ impl Broker {
                 }
             }
         });
-        // Main broker loop for generating orders
+
+        // Main broker loop for generating orders and sending to Kafka
         loop {
             for client in &self.clients {
                 let mut client = client.lock().await;

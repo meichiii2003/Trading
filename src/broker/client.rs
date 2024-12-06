@@ -3,6 +3,7 @@
 use crate::broker::portfolio::Portfolio;
 use crate::models::{BrokerOrderRecord, KafkaOrderRequest, OrderAction, OrderStatus, OrderType, PriceUpdate};
 use crate::utils;
+use rand::seq::SliceRandom;
 use rand::Rng;
 use std::sync::atomic::Ordering;
 use std::collections::HashMap;
@@ -44,39 +45,140 @@ impl Client {
         global_order_counter: Arc<AtomicU64>,
     ) {
         let stock_data_guard = stock_data.lock().await;
-
-        let mut kafka_order = None;
-        let mut price = 0.0;
         
-        if let Some(&p) = stock_data_guard.get("APPL") {
+        // Get all available stocks and their market prices
+        let available_stocks: Vec<(&String, &f64)> = stock_data_guard.iter().collect();
+
+        // Prioritize stocks with low or no holdings
+        let mut prioritized_stocks: Vec<&(&String, &f64)> = available_stocks
+            .iter()
+            .filter(|(symbol, _)| self.portfolio.get_quantity(symbol) == 0)
+            .collect();
+
+        if prioritized_stocks.is_empty() {
+            // If all stocks have holdings, prioritize the least-held stocks
+            let mut sorted_stocks: Vec<_> = available_stocks.iter().collect();
+            sorted_stocks.sort_by_key(|(symbol, _)| self.portfolio.get_quantity(symbol));
+            prioritized_stocks = sorted_stocks;
+        }
+
+        if let Some(&(stock_symbol, &market_price)) = prioritized_stocks.choose(&mut rand::thread_rng()) {
+            let mut rng = rand::thread_rng();
+            let is_limit_order = rng.gen_bool(0.7); // 70% Limit Orders
+            let is_buy_order = rng.gen_bool(0.5);   // 50% Buy, 50% Sell
             let order_id = format!("Order {}", global_order_counter.fetch_add(1, Ordering::SeqCst));
-            price = p;
-            kafka_order = Some(KafkaOrderRequest {
-                broker_id,
-                client_id: self.id,
-                order_id,
-                stock_symbol: "APPL".to_string(),
-                order_type: OrderType::Market,
-                order_action: OrderAction::Buy,
-                price,
-                quantity: 1,
-                status: OrderStatus::Pending,
-            });
+            let quantity = rng.gen_range(1..=10); // Random quantity between 1 and 100
+    
+            if is_buy_order {
+                // Generate Buy Order
+                if is_limit_order {
+                    // LimitBuy Order Pricing
+                    let limit_price = if rng.gen_bool(0.95) {
+                        // 95% of LimitBuy orders below market price
+                        market_price * (0.90 + rng.gen_range(0.0..0.05)) // Between 90% and 95% of market price
+                    } else {
+                        // 5% of LimitBuy orders above market price
+                        market_price * (1.05 + rng.gen_range(0.0..0.05)) // Between 105% and 110% of market price
+                    };
+                    let rounded_limit_price = (limit_price * 100.0).round() / 100.0; // Round to 2 decimal places
+    
+                    self.pending_orders.push(KafkaOrderRequest {
+                        broker_id,
+                        client_id: self.id,
+                        order_id: order_id.clone(),
+                        stock_symbol: stock_symbol.to_string(),
+                        order_type: OrderType::Limit,
+                        order_action: OrderAction::Buy,
+                        price: rounded_limit_price,
+                        quantity,
+                        status: OrderStatus::Pending,
+                    });
+                } else {
+                    // MarketBuy Order
+                    let rounded_market_price = (market_price * 100.0).round() / 100.0;
+                    self.pending_orders.push(KafkaOrderRequest {
+                        broker_id,
+                        client_id: self.id,
+                        order_id: order_id.clone(),
+                        stock_symbol: stock_symbol.to_string(),
+                        order_type: OrderType::Market,
+                        order_action: OrderAction::Buy,
+                        price: rounded_market_price,
+                        quantity,
+                        status: OrderStatus::Pending,
+                    });
+                }
+            } else if self.portfolio.get_quantity(stock_symbol) >= quantity {
+                // Generate Sell Order (only if holdings are sufficient)
+                if is_limit_order {
+                    // LimitSell Order Pricing
+                    let limit_price = if rng.gen_bool(0.95) {
+                        // 95% of LimitBuy orders below market price
+                        market_price * (0.90 + rng.gen_range(0.0..0.05)) // Between 90% and 95% of market price
+                    } else {
+                        // 5% of LimitBuy orders above market price
+                        market_price * (1.05 + rng.gen_range(0.0..0.05)) // Between 105% and 110% of market price
+                    };
+                    let rounded_limit_price = (limit_price * 100.0).round() / 100.0; // Round to 2 decimal places
+    
+                    self.pending_orders.push(KafkaOrderRequest {
+                        broker_id,
+                        client_id: self.id,
+                        order_id: order_id.clone(),
+                        stock_symbol: stock_symbol.to_string(),
+                        order_type: OrderType::Limit,
+                        order_action: OrderAction::Sell,
+                        price: rounded_limit_price,
+                        quantity,
+                        status: OrderStatus::Pending,
+                    });
+                } else {
+                    // MarketSell Order
+                    let rounded_market_price = (market_price * 100.0).round() / 100.0;
+                    self.pending_orders.push(KafkaOrderRequest {
+                        broker_id,
+                        client_id: self.id,
+                        order_id: order_id.clone(),
+                        stock_symbol: stock_symbol.to_string(),
+                        order_type: OrderType::Market,
+                        order_action: OrderAction::Sell,
+                        price: rounded_market_price,
+                        quantity,
+                        status: OrderStatus::Pending,
+                    });
+                }
+            }
+    
+            if let Some(last_order) = self.pending_orders.last() {
+                println!(
+                    "Client {} generated order: {:?}",
+                    self.id, last_order
+                );
+    
+                // Add Broker Records for Buy Orders with Stop-Loss/Take-Profit
+                if last_order.order_action == OrderAction::Buy {
+                    let rounded_stop_loss = (market_price * 0.9 * 100.0).round() / 100.0;
+                    let rounded_take_profit = (market_price * 1.1 * 100.0).round() / 100.0;
+                    
+                    self.broker_records.push(BrokerOrderRecord {
+                        order_id: last_order.order_id.clone(),
+                        stop_loss: Some(rounded_stop_loss),   // Example: 10% loss threshold
+                        take_profit: Some(rounded_take_profit), // Example: 10% profit target
+                    });
+                    if let Some(last_record) = self.broker_records.last() {
+                        println!(
+                            "Client {} recorded internal broker order: BrokerOrderRecord {{ order_id: \"{}\", stop_loss: {:.2}, take_profit: {:.2} }}",
+                            self.id,
+                            last_record.order_id,
+                            last_record.stop_loss.unwrap_or_default(),
+                            last_record.take_profit.unwrap_or_default()
+                        );
+                    }
+                    
+                }
+            }
         }
-
-        if let Some(kafka_order) = kafka_order {
-            let broker_record = BrokerOrderRecord {
-                order_id: kafka_order.order_id.clone(),
-                stop_loss: Some(price * 0.9),   // Example: 10% loss threshold
-                take_profit: Some(price * 1.1), // Example: 10% profit target
-            };
-
-            println!("Client {} generated order: {:?}", self.id, kafka_order);
-            self.pending_orders.push(kafka_order);
-
-            println!("Client {} recorded internal broker order: {:?}", self.id, broker_record);
-            self.broker_records.push(broker_record);
-        }
+        
         // // Deduct capital immediately for buy orders
         // let estimated_cost = self.estimate_order_cost(&order).await;
         // if self.capital >= estimated_cost {

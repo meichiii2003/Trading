@@ -47,7 +47,7 @@ pub enum OrderType {
     Limit,
 }
 
-#[derive(Serialize, Debug, Deserialize, Clone)]
+#[derive(Serialize, Debug, Deserialize, Clone, PartialEq)]
 pub enum OrderAction {
     Buy,
     Sell,
@@ -70,7 +70,7 @@ pub struct KafkaOrderRequest {
     pub order_type: OrderType,
     pub order_action: OrderAction,
     pub price: f64,
-    pub quantity: usize,
+    pub quantity: u64,
     pub status: OrderStatus,
 }
 
