@@ -17,6 +17,7 @@ mod utils;
 
 
 use std::collections::HashMap;
+use std::sync::atomic::AtomicU64;
 use tokio::sync::Barrier;
 use tokio::sync::Mutex;
 use std::sync::Arc;
@@ -28,38 +29,62 @@ use rdkafka::ClientConfig;
 
 #[tokio::main]
 async fn main() {
+    // 1. Global order counter for unique order IDs across all brokers
+    let global_order_counter = Arc::new(AtomicU64::new(1)); // Start from Order 1
     
-    // // 1. Initialize communication channels
-    // let (price_tx, price_rx) = mpsc::unbounded_channel();
-    // let channels = CommunicationChannels::new(price_tx, price_rx);
-
-    // 1. Initialize broadcast channel
+    // 2. Broadcast channel for stock price updates
     let buffer_size = 1000; // Buffer size for the broadcast channel
-    let (price_tx, _) = tokio::sync::broadcast::channel(buffer_size); // Create the broadcast channel
-    //let (batch_signal_tx, _) = tokio::sync::broadcast::channel(buffer_size);
+    let (price_tx, _) = tokio::sync::broadcast::channel(buffer_size); // Price update broadcast channel
 
-    // Shared tracker for brokers
-    let total_brokers = 5; // Total brokers
+    // 3. Number of brokers
+    let total_brokers = 5; // Total number of brokers
+
     //let total_updates = 5; // Total updates in each batch
     let updates_per_batch = 5; // Updates per batch
     let tracker: Arc<Mutex<HashMap<u32, PriceUpdate>>> = Arc::new(Mutex::new(HashMap::new()));
     let barrier = Arc::new(Barrier::new(total_brokers as usize)); // Create a barrier for synchronization
     
     // 2. Create brokers
-    let mut broker_handles = Vec::new();
-    // Start brokers first
-    for broker_id in 1..=total_brokers {
-        let mut broker = Broker::new(broker_id, price_tx.clone());
-        let producer = create_producer();
-        //let batch_signal_rx = batch_signal_tx.subscribe();
-        let producer = create_producer(); // Assuming create_producer() returns a FutureProducer
+    // let mut broker_handles = Vec::new();
+    // // Start brokers first
+    // for broker_id in 1..=total_brokers {
+    //     let mut broker = Broker::new(broker_id, price_tx.clone());
+    //     let producer = create_producer(); // Assuming create_producer() returns a FutureProducer
 
+    //     let handle = tokio::spawn(async move {
+    //         broker.start(producer).await; // Start the broker
+    //     });
+
+    //     broker_handles.push(handle);
+    // }
+    // 4. Start brokers
+    let mut broker_handles = Vec::new();
+    for broker_id in 1..=total_brokers {
+        let price_rx = price_tx.subscribe(); // Each broker gets its own receiver
+        let global_counter = global_order_counter.clone(); // Shared global counter for order IDs
+        let producer = create_producer(); // Create a Kafka producer
+
+        // Create a broker instance and start it
+        let mut broker = Broker::new(broker_id, price_tx.clone(), global_counter);
         let handle = tokio::spawn(async move {
             broker.start(producer).await; // Start the broker
         });
 
         broker_handles.push(handle);
     }
+
+    // let mut broker_handles = Vec::new();
+    // // Start brokers first
+    // for broker_id in 1..=total_brokers {
+    //     let mut broker = Broker::new(broker_id, price_tx.clone());
+    //     let producer = create_producer(); // Assuming create_producer() returns a FutureProducer
+
+    //     let handle = tokio::spawn(async move {
+    //         broker.start(producer).await; // Start the broker
+    //     });
+
+    //     broker_handles.push(handle);
+    // }
     // 3. Start the Kafka consumer task
     // task::spawn(async move {
     //     consumer::run_consumer(channels.price_tx.clone()).await;

@@ -1,10 +1,11 @@
 use std::collections::HashMap;
+use rand::seq::{IteratorRandom, SliceRandom};
 use rdkafka::config::ClientConfig;
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use serde::{Serialize};
 use tokio;
 use chrono;
-use rand::random;
+use rand::{random, Rng};
 
 #[derive(Serialize, Debug)]
 struct PriceUpdate {
@@ -22,7 +23,7 @@ struct Transaction {
 }
 
 // Define the Stock struct
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Stock {
     name: String,
     price: f64,
@@ -112,42 +113,95 @@ async fn main() {
         // Stock::new("HD", 100.00),
     ];
 
-    // Infinite loop to continuously send price updates
-    loop {
-        let mut updates = Vec::new();
+    // Store the latest prices
+    let mut stored_prices: HashMap<String, f64> = HashMap::new();
 
-        // Update stock prices
-        for stock in &mut stock_data {
-            stock.price = update_price(stock.price);
-            updates.push(PriceUpdate {
-                name: stock.name.clone(),
-                price: stock.price,
-            });
-        }
+    // Send initial prices one by one
+    for stock in &stock_data {
+        stored_prices.insert(stock.name.clone(), stock.price);
 
-        // Serialize all updates into a JSON array
-        let payload = serde_json::to_string(&updates).expect("Failed to serialize price updates");
+        let payload = serde_json::to_string(&PriceUpdate {
+            name: stock.name.clone(),
+            price: stock.price,
+        })
+        .expect("Failed to serialize price update");
 
-        // Send the batch update as one message
         producer
             .send(
                 FutureRecord::to(topic)
-                    .key("all_stocks")
+                    .key(&stock.name)
                     .payload(&payload),
                 rdkafka::util::Timeout::Never,
             )
             .await
-            .expect("Failed to send price updates");
+            .expect("Failed to send initial price");
 
-        println!("Sent batch update to brokers: {:?}", updates);
+        println!("Sent initial price for {}: {}", stock.name, stock.price);
+    }
+
+    // Add separator after sending initial prices
+    println!("---------------------");
+
+    // Wait for 5 seconds before sending updated prices
+    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+
+    // Continuously send only changed prices
+    loop {
+        let mut updates_made = false;
+
+        // Select 2-4 random stocks to update
+        let mut rng = rand::thread_rng();
+        let num_changes = rng.gen_range(2..=4);
+        let mut stocks_to_update: Vec<&mut Stock> = stock_data.iter_mut().choose_multiple(&mut rng, num_changes).into_iter().collect();
+
+        for stock in &mut stocks_to_update {
+            // Update price
+            let new_price = update_price(stock.price);
+
+            // Check if the price has changed
+            if (new_price - stock.price).abs() > f64::EPSILON {
+                updates_made = true;
+
+                // Update the stored price
+                stored_prices.insert(stock.name.clone(), new_price);
+
+                // Reflect the change in the stock data
+                stock.price = new_price;
+
+                // Serialize and send the update individually
+                let payload = serde_json::to_string(&PriceUpdate {
+                    name: stock.name.clone(),
+                    price: new_price,
+                })
+                .expect("Failed to serialize price update");
+
+                producer
+                    .send(
+                        FutureRecord::to(topic)
+                            .key(&stock.name)
+                            .payload(&payload),
+                        rdkafka::util::Timeout::Never,
+                    )
+                    .await
+                    .expect("Failed to send price update");
+
+                println!("Sent updated price for {}: {}", stock.name, new_price);
+            }
+        }
+
+        // If any updates were made, add the separator
+        if updates_made {
+            println!("---------------------");
+        }
 
         tokio::time::sleep(std::time::Duration::from_secs(5)).await;
     }
 }
 
-// Simulate price update with random fluctuation
+// Simulate random price update
 fn update_price(current_price: f64) -> f64 {
-    let change = rand::random::<f64>() * 2.0 - 1.0; // Random change between -1.0 and 1.0
+    let mut rng = rand::thread_rng();
+    let change = rng.gen_range(-1.0..1.0); // Random change between -1.0 and 1.0
     let updated_price = current_price + change;
     ((updated_price.max(0.0)) * 100.0).round() / 100.0 // Ensure price is >= 0 and round to 2 decimals
 }

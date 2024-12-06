@@ -12,11 +12,11 @@ pub struct Broker {
     clients: Vec<Arc<Mutex<Client>>>,
     price_rx: Receiver<PriceUpdate>, // Broadcast receiver for stock updates
     stock_data: Arc<Mutex<HashMap<String, f64>>>, // HashMap to store stock prices
-    order_counter: Arc<AtomicU64>, // Atomic counter for sequential order IDs
+    global_order_counter: Arc<AtomicU64>, // Shared counter for Order IDs
 }
 
 impl Broker {
-    pub fn new(id: u64, price_tx: tokio::sync::broadcast::Sender<PriceUpdate>) -> Self {
+    pub fn new(id: u64, price_tx: tokio::sync::broadcast::Sender<PriceUpdate>, global_order_counter: Arc<AtomicU64>) -> Self {
         // Initialize clients
         let mut clients = Vec::new();
 
@@ -33,13 +33,14 @@ impl Broker {
             clients,
             price_rx: price_tx.subscribe(), // Subscribe to the broadcast channel
             stock_data: Arc::new(Mutex::new(HashMap::new())), // Initialize an empty HashMap
-            order_counter: Arc::new(AtomicU64::new(1)), // Start order IDs from 1
+            global_order_counter,
         }
     }
 
     pub async fn start(&mut self, producer: rdkafka::producer::FutureProducer) {
         let stock_data = self.stock_data.clone();
         let clients = self.clients.clone();
+        let global_order_counter = self.global_order_counter.clone(); // Access shared counter
         let broker_id = self.id;
         let mut price_rx = self.price_rx.resubscribe();
         tokio::spawn({
@@ -63,7 +64,7 @@ impl Broker {
         loop {
             for client in &self.clients {
                 let mut client = client.lock().await;
-                client.generate_order(self.id, self.stock_data.clone(), self.order_counter.clone()).await;
+                client.generate_order(self.id, self.stock_data.clone(), global_order_counter.clone()).await;
 
                 let orders = client.collect_orders();
                 for order in orders {

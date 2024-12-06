@@ -41,7 +41,7 @@ impl Client {
         &mut self,
         broker_id: u64,
         stock_data: Arc<Mutex<HashMap<String, f64>>>,
-        order_counter: Arc<AtomicU64>,
+        global_order_counter: Arc<AtomicU64>,
     ) {
         let stock_data_guard = stock_data.lock().await;
 
@@ -49,7 +49,7 @@ impl Client {
         let mut price = 0.0;
         
         if let Some(&p) = stock_data_guard.get("APPL") {
-            let order_id = format!("Order {}", order_counter.fetch_add(1, Ordering::SeqCst));
+            let order_id = format!("Order {}", global_order_counter.fetch_add(1, Ordering::SeqCst));
             price = p;
             kafka_order = Some(KafkaOrderRequest {
                 broker_id,

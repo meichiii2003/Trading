@@ -51,13 +51,14 @@ pub enum OrderType {
 pub enum OrderAction {
     Buy,
     Sell,
+    Cancel,
 }
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
 pub enum OrderStatus {
     Pending,
     Completed,
-    Canceled,
+    Rejected,
 }
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
