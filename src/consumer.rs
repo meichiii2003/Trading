@@ -9,12 +9,6 @@ use std::io::Write;
 use tokio_stream::StreamExt;
 use crate::models::PriceUpdate;
 
-// #[derive(Serialize, Deserialize, Debug, Clone)]
-// pub struct PriceUpdate {
-//     pub name: String,
-//     pub price: f64,
-// }
-
 const JSON_FILE_PATH: &str = "src/data/price_store.json";
 
 pub async fn run_consumer(price_tx: tokio::sync::broadcast::Sender<PriceUpdate>) {
@@ -41,11 +35,11 @@ pub async fn run_consumer(price_tx: tokio::sync::broadcast::Sender<PriceUpdate>)
     //let (price_tx, mut price_rx) = tokio::sync::mpsc::channel(100);
 
     // Continuously consume messages
-    while let Some(message) = message_stream.next().await {
+    while let Some(message) = message_stream.next().await { 
         match message {
             Ok(m) => {
                 if let Some(payload) = m.payload() {
-                    println!("Raw Payload: {}", String::from_utf8_lossy(payload));
+                    println!("Stock: {}", String::from_utf8_lossy(payload));
 
                     // Deserialize the payload into a Vec<PriceUpdate>
                     match serde_json::from_slice::<PriceUpdate>(payload) {

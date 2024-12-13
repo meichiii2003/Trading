@@ -22,13 +22,18 @@ impl Portfolio {
             if *entry >= qty_to_remove {
                 *entry -= qty_to_remove;
             } else {
-                *entry = 0; // Can't have negative holdings
+                println!(
+                    "Attempted to sell more shares than owned for {}. Setting holdings to 0.",
+                    stock_symbol
+                );
+                *entry = 0; // Prevent negative holdings
             }
         } else {
             // Buying shares
             *entry += quantity_change as u64;
         }
     }
+    
 
     /// Get the quantity of a specific stock.
     pub fn get_quantity(&self, stock_symbol: &str) -> u64 {
@@ -54,5 +59,22 @@ impl Portfolio {
     /// Check if a stock is held in the portfolio.
     pub fn can_sell(&self, stock_symbol: &str, quantity: u64) -> bool {
         self.get_quantity(stock_symbol) >= quantity
+    }
+
+    // The calculated value of the portfolio based on the current market prices.
+    pub fn calculate_dynamic_value(&self, current_prices: &HashMap<String, f64>) -> f64 {
+        self.holdings
+            .iter()
+            .map(|(symbol, &qty)| {
+                current_prices
+                    .get(symbol)
+                    .map(|&price| price * qty as f64)
+                    .unwrap_or(0.0)
+            })
+            .sum()
+    }
+
+    pub fn remove_stock(&mut self, stock_symbol: &str) {
+        self.holdings.remove(stock_symbol);
     }
 }

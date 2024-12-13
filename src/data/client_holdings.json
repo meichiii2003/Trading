@@ -1,0 +1,142 @@
+{
+  "brokers": [
+    {
+      "broker_id": 1,
+      "clients": [
+        {
+          "client_id": 1,
+          "portfolio": {
+            "TSLA": 6
+          },
+          "buy_transaction_count": 1,
+          "sell_transaction_count": 0
+        },
+        {
+          "client_id": 2,
+          "portfolio": {
+            "GOOG": 3
+          },
+          "buy_transaction_count": 1,
+          "sell_transaction_count": 0
+        },
+        {
+          "client_id": 3,
+          "portfolio": {},
+          "buy_transaction_count": 0,
+          "sell_transaction_count": 0
+        }
+      ]
+    },
+    {
+      "broker_id": 2,
+      "clients": [
+        {
+          "client_id": 4,
+          "portfolio": {
+            "TSLA": 4
+          },
+          "buy_transaction_count": 1,
+          "sell_transaction_count": 0
+        },
+        {
+          "client_id": 5,
+          "portfolio": {},
+          "buy_transaction_count": 0,
+          "sell_transaction_count": 0
+        },
+        {
+          "client_id": 6,
+          "portfolio": {},
+          "buy_transaction_count": 0,
+          "sell_transaction_count": 0
+        }
+      ]
+    },
+    {
+      "broker_id": 3,
+      "clients": [
+        {
+          "client_id": 7,
+          "portfolio": {
+            "AMZN": 7
+          },
+          "buy_transaction_count": 1,
+          "sell_transaction_count": 0
+        },
+        {
+          "client_id": 8,
+          "portfolio": {
+            "APPL": 8
+          },
+          "buy_transaction_count": 1,
+          "sell_transaction_count": 0
+        },
+        {
+          "client_id": 9,
+          "portfolio": {
+            "TSLA": 4,
+            "APPL": 4,
+            "AMZN": 9
+          },
+          "buy_transaction_count": 3,
+          "sell_transaction_count": 0
+        }
+      ]
+    },
+    {
+      "broker_id": 4,
+      "clients": [
+        {
+          "client_id": 10,
+          "portfolio": {},
+          "buy_transaction_count": 0,
+          "sell_transaction_count": 0
+        },
+        {
+          "client_id": 11,
+          "portfolio": {
+            "APPL": 2
+          },
+          "buy_transaction_count": 1,
+          "sell_transaction_count": 0
+        },
+        {
+          "client_id": 12,
+          "portfolio": {
+            "TSLA": 4
+          },
+          "buy_transaction_count": 1,
+          "sell_transaction_count": 0
+        }
+      ]
+    },
+    {
+      "broker_id": 5,
+      "clients": [
+        {
+          "client_id": 13,
+          "portfolio": {},
+          "buy_transaction_count": 0,
+          "sell_transaction_count": 0
+        },
+        {
+          "client_id": 14,
+          "portfolio": {
+            "GOOG": 4,
+            "MSFT": 8
+          },
+          "buy_transaction_count": 2,
+          "sell_transaction_count": 0
+        },
+        {
+          "client_id": 15,
+          "portfolio": {
+            "GOOG": 7
+          },
+          "buy_transaction_count": 1,
+          "sell_transaction_count": 0
+        }
+      ]
+    }
+  ]
+}

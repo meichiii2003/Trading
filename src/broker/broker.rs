@@ -4,8 +4,10 @@ use rdkafka::producer::{self, FutureProducer, FutureRecord};
 use tokio::sync::{broadcast::Receiver, Mutex};
 use std::sync::{Arc, atomic::AtomicU64};
 use std::collections::HashMap;
-use crate::models::{KafkaOrderRequest, BrokerOrderRecord, OrderType, PriceUpdate};
+use crate::broker::update_client_portfolio_in_json;
+use crate::models::{BrokerOrderRecord, Order, OrderAction, OrderType, PriceUpdate};
 use crate::broker::client::Client;
+
 
 pub struct Broker {
     pub id: u64,
@@ -14,15 +16,40 @@ pub struct Broker {
     stock_data: Arc<Mutex<HashMap<String, f64>>>, // HashMap to store stock prices
     global_order_counter: Arc<AtomicU64>, // Shared counter for Order IDs
 }
+pub fn initialize_brokers(
+    total_brokers: u64,
+    price_tx: tokio::sync::broadcast::Sender<PriceUpdate>,
+    global_order_counter: Arc<AtomicU64>,
+) -> Vec<Arc<Mutex<Broker>>> {
+    (1..=total_brokers)
+        .map(|broker_id| {
+            Arc::new(Mutex::new(Broker::new(
+                broker_id,
+                price_tx.clone(),
+                global_order_counter.clone(),
+            )))
+        })
+        .collect()
+}
 
 impl Broker {
-    pub fn new(id: u64, price_tx: tokio::sync::broadcast::Sender<PriceUpdate>, global_order_counter: Arc<AtomicU64>) -> Self {
-        // Initialize clients
+    pub fn get_clients(&self) -> &Vec<Arc<Mutex<Client>>> {
+        &self.clients
+    }
+    
+
+    pub fn new(
+        id: u64,
+        price_tx: tokio::sync::broadcast::Sender<PriceUpdate>,
+        global_order_counter: Arc<AtomicU64>,
+    ) -> Self {
+        // Initialize clients with unique IDs per broker
         let mut clients = Vec::new();
 
-        // Each broker handles 3 fixed clients
+        // Offset client IDs based on the broker's ID
         let start_client_id = (id - 1) * 3 + 1;
         let end_client_id = id * 3;
+
         for client_id in start_client_id..=end_client_id {
             let client = Arc::new(Mutex::new(Client::new(client_id)));
             clients.push(client);
@@ -36,6 +63,9 @@ impl Broker {
             global_order_counter,
         }
     }
+
+    
+
 
     pub async fn start(&mut self, producer: rdkafka::producer::FutureProducer) {
         let stock_data = self.stock_data.clone();
@@ -54,11 +84,11 @@ impl Broker {
                     let mut stock_data_guard = stock_data.lock().await;
                     stock_data_guard.insert(price_update.name.clone(), price_update.price);
 
-                    for client in &clients {
-                        let mut client = client.lock().await;
-                        client.handle_price_update(&price_update).await;
-                    }
-                    println!("Broker {} received update: {:?}", broker_id, price_update);
+                    // for client in &clients {
+                    //     let mut client = client.lock().await;
+                    //     client.handle_price_update(&price_update).await;
+                    // }
+                    // println!("Broker {} received update: {:?}", broker_id, price_update);
                 }
             }
         });
@@ -73,14 +103,14 @@ impl Broker {
                 for order in orders {
                     self.send_order_to_kafka(order, &producer).await;
                 }
+    
             }
-
             tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
         }
     }
 
 
-    // pub async fn process_order(&self, order: KafkaOrderRequest) {
+    // pub async fn process_order(&self, order: Order) {
     //     match order.order_type {
     //         OrderType::MarketBuy { price, take_profit, stop_loss } => {
     //             println!(
@@ -151,7 +181,7 @@ impl Broker {
     //     }
     // }
 
-    async fn send_order_to_kafka(&self, order: KafkaOrderRequest, producer: &rdkafka::producer::FutureProducer) {
+    async fn send_order_to_kafka(&self, order: Order, producer: &rdkafka::producer::FutureProducer) {
         let payload = serde_json::to_string(&order).expect("Failed to serialize order");
         producer
             .send(
@@ -163,7 +193,56 @@ impl Broker {
             .await
             .expect("Failed to send order to Kafka");
 
-        println!("Broker {} sent order to Kafka: {:?}", self.id, order);
+        //println!("Broker {} sent order to Kafka: {:?}", self.id, order);
+    }
+
+    pub async fn process_completed_orders(
+        &mut self,
+        completed_orders: Vec<Order>,
+        json_file_path: &str,
+    ) {
+        for completed_order in completed_orders {
+            for client in &self.clients {
+                let mut client = client.lock().await;
+                if client.id == completed_order.client_id {
+                    // Update the client's portfolio
+                    client
+                        .portfolio
+                        .update_holdings(&completed_order.stock_symbol, completed_order.quantity as i64);
+                    // Determine if this is a buy or sell order
+                    let is_buy = completed_order.order_action == OrderAction::Buy;
+
+    
+                    // Update the JSON file
+                    update_client_portfolio_in_json(
+                        json_file_path,
+                        completed_order.client_id,
+                        completed_order.stock_symbol.clone(),
+                        completed_order.quantity,
+                        is_buy,
+                    )
+                    .await;
+    
+                    println!(
+                        "Updated Portfolio for Client {}: {:?}",
+                        client.id,
+                        client.portfolio.get_holdings()
+                    );
+                }
+            }
+        }
+    }
+    
+    pub async fn process_rejected_orders(&mut self, rejected_orders: Vec<Order>) {
+        for order in rejected_orders {
+            for client in &self.clients {
+                let mut client = client.lock().await;
+                if client.id == order.client_id {
+                    client.handle_rejected_order(&order);
+                    break;
+                }
+            }
+        }
     }
 
     pub async fn process_client_orders(&self, client: &Arc<Mutex<Client>>, producer: &FutureProducer) {

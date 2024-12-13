@@ -1,10 +1,15 @@
-// broker/client.rs
+// broker/client.rs;
 
 use crate::broker::portfolio::Portfolio;
-use crate::models::{BrokerOrderRecord, KafkaOrderRequest, OrderAction, OrderStatus, OrderType, PriceUpdate};
+use crate::models::{BrokerOrderRecord, Order, OrderAction, OrderStatus, OrderType, PriceUpdate};
+use crate::broker::broker::Broker;
+
 use crate::utils;
 use rand::seq::SliceRandom;
 use rand::Rng;
+use serde_json::Value;
+use tokio::fs::File;
+use tokio::io::AsyncReadExt;
 use std::sync::atomic::Ordering;
 use std::collections::HashMap;
 use std::sync::atomic::AtomicU64;
@@ -19,14 +24,15 @@ pub struct Client {
     pub initial_capital: f64,
     pub capital: f64,
     pub portfolio: Portfolio,
-    pending_orders: Vec<KafkaOrderRequest>,
+    pending_orders: Vec<Order>,
     broker_records: Vec<BrokerOrderRecord>,
     // Additional fields as needed
 }
 
 impl Client {
     pub fn new(id: u64) -> Self {
-        let initial_capital = 10_000.0 + rand::thread_rng().gen_range(0.0..10_000.0); // Random initial capital between $10,000 and $20,000
+        //let initial_capital = 10_000.0 + rand::thread_rng().gen_range(0.0..10_000.0); // Random initial capital between $10,000 and $20,000
+        let initial_capital = 10_000.0; // Fixed initial capital for simplicity
         Self {
             id,
             initial_capital,
@@ -45,47 +51,56 @@ impl Client {
         global_order_counter: Arc<AtomicU64>,
     ) {
         let stock_data_guard = stock_data.lock().await;
-        
+    
         // Get all available stocks and their market prices
         let available_stocks: Vec<(&String, &f64)> = stock_data_guard.iter().collect();
-
+    
         // Prioritize stocks with low or no holdings
         let mut prioritized_stocks: Vec<&(&String, &f64)> = available_stocks
             .iter()
             .filter(|(symbol, _)| self.portfolio.get_quantity(symbol) == 0)
             .collect();
-
+    
         if prioritized_stocks.is_empty() {
             // If all stocks have holdings, prioritize the least-held stocks
             let mut sorted_stocks: Vec<_> = available_stocks.iter().collect();
             sorted_stocks.sort_by_key(|(symbol, _)| self.portfolio.get_quantity(symbol));
             prioritized_stocks = sorted_stocks;
         }
-
+    
         if let Some(&(stock_symbol, &market_price)) = prioritized_stocks.choose(&mut rand::thread_rng()) {
             let mut rng = rand::thread_rng();
             let is_limit_order = rng.gen_bool(0.7); // 70% Limit Orders
             let is_buy_order = rng.gen_bool(0.5);   // 50% Buy, 50% Sell
-            let order_id = format!("Order {}", global_order_counter.fetch_add(1, Ordering::SeqCst));
-            let quantity = rng.gen_range(1..=10); // Random quantity between 1 and 100
+            let quantity = rng.gen_range(1..=10); // Random quantity between 1 and 10
+            
+            // Generate price based on distribution
+            let price_modifier = {
+                let random_percent = rng.gen_range(0..100); // Generate a random percentage (0-99)
+                if random_percent < 90 {
+                    // 80% chance: within valid range (80%-120%)
+                    rng.gen_range(0.8..=1.2)
+                } else if random_percent < 95 {
+                    // 10% chance: below valid range (70%-80%)
+                    rng.gen_range(0.7..0.8)
+                } else {
+                    // 10% chance: above valid range (120%-130%)
+                    rng.gen_range(1.2..1.3)
+                }
+            };
+
+            let limit_price = market_price * price_modifier;
+            let rounded_limit_price = (limit_price * 100.0).round() / 100.0;
+            
+            let mut valid_order = None;
     
             if is_buy_order {
                 // Generate Buy Order
                 if is_limit_order {
-                    // LimitBuy Order Pricing
-                    let limit_price = if rng.gen_bool(0.95) {
-                        // 95% of LimitBuy orders below market price
-                        market_price * (0.90 + rng.gen_range(0.0..0.05)) // Between 90% and 95% of market price
-                    } else {
-                        // 5% of LimitBuy orders above market price
-                        market_price * (1.05 + rng.gen_range(0.0..0.05)) // Between 105% and 110% of market price
-                    };
-                    let rounded_limit_price = (limit_price * 100.0).round() / 100.0; // Round to 2 decimal places
-    
-                    self.pending_orders.push(KafkaOrderRequest {
+                    valid_order = Some(Order {
                         broker_id,
                         client_id: self.id,
-                        order_id: order_id.clone(),
+                        order_id: String::new(), // Placeholder for now
                         stock_symbol: stock_symbol.to_string(),
                         order_type: OrderType::Limit,
                         order_action: OrderAction::Buy,
@@ -96,10 +111,10 @@ impl Client {
                 } else {
                     // MarketBuy Order
                     let rounded_market_price = (market_price * 100.0).round() / 100.0;
-                    self.pending_orders.push(KafkaOrderRequest {
+                    valid_order = Some(Order {
                         broker_id,
                         client_id: self.id,
-                        order_id: order_id.clone(),
+                        order_id: String::new(), // Placeholder for now
                         stock_symbol: stock_symbol.to_string(),
                         order_type: OrderType::Market,
                         order_action: OrderAction::Buy,
@@ -109,22 +124,12 @@ impl Client {
                     });
                 }
             } else if self.portfolio.get_quantity(stock_symbol) >= quantity {
-                // Generate Sell Order (only if holdings are sufficient)
+                // Generate Sell Order
                 if is_limit_order {
-                    // LimitSell Order Pricing
-                    let limit_price = if rng.gen_bool(0.95) {
-                        // 95% of LimitBuy orders below market price
-                        market_price * (0.90 + rng.gen_range(0.0..0.05)) // Between 90% and 95% of market price
-                    } else {
-                        // 5% of LimitBuy orders above market price
-                        market_price * (1.05 + rng.gen_range(0.0..0.05)) // Between 105% and 110% of market price
-                    };
-                    let rounded_limit_price = (limit_price * 100.0).round() / 100.0; // Round to 2 decimal places
-    
-                    self.pending_orders.push(KafkaOrderRequest {
+                    valid_order = Some(Order {
                         broker_id,
                         client_id: self.id,
-                        order_id: order_id.clone(),
+                        order_id: String::new(), // Placeholder for now
                         stock_symbol: stock_symbol.to_string(),
                         order_type: OrderType::Limit,
                         order_action: OrderAction::Sell,
@@ -133,12 +138,11 @@ impl Client {
                         status: OrderStatus::Pending,
                     });
                 } else {
-                    // MarketSell Order
                     let rounded_market_price = (market_price * 100.0).round() / 100.0;
-                    self.pending_orders.push(KafkaOrderRequest {
+                    valid_order = Some(Order {
                         broker_id,
                         client_id: self.id,
-                        order_id: order_id.clone(),
+                        order_id: String::new(), // Placeholder for now
                         stock_symbol: stock_symbol.to_string(),
                         order_type: OrderType::Market,
                         order_action: OrderAction::Sell,
@@ -149,48 +153,64 @@ impl Client {
                 }
             }
     
-            if let Some(last_order) = self.pending_orders.last() {
-                println!(
-                    "Client {} generated order: {:?}",
-                    self.id, last_order
-                );
+            if let Some(mut order) = valid_order {
+                // Assign a unique order ID after validation
+                order.order_id = format!("Order {}", global_order_counter.fetch_add(1, Ordering::SeqCst));
+
+                if order.order_action == OrderAction::Buy {
+                    let total_cost = order.quantity as f64 * order.price;
+            
+                    if self.capital >= total_cost {
+                        println!(
+                            "Client {}: Placing Buy order for {} ({}, {} shares at {:.2} per share). Total Cost: {:.2}, Initial Capital: {:.2}, Available Capital after order: {:.2}",
+                            self.id, order.stock_symbol, order.order_id, order.quantity, order.price, total_cost, self.capital, self.capital - total_cost
+                        );
+                        self.capital -= total_cost;
+                    } else {
+                        println!(
+                            "Client {}: Insufficient funds for Buy order on {} ({}, {} shares at {:.2} per share). Total Cost: {:.2}, Available Capital: {:.2}",
+                            self.id, order.stock_symbol, order.order_id, order.quantity, order.price, total_cost, self.capital
+                        );
+                        return;
+                    }
+                }
+            
+                // Add the order to the pending orders list
+                self.pending_orders.push(order);
+    
+                // Print the generated order
+                // println!(
+                //     "Client {} generated order: {:?}",
+                //     self.id, self.pending_orders.last().unwrap()
+                // );
     
                 // Add Broker Records for Buy Orders with Stop-Loss/Take-Profit
-                if last_order.order_action == OrderAction::Buy {
+                if self.pending_orders.last().unwrap().order_action == OrderAction::Buy {
                     let rounded_stop_loss = (market_price * 0.9 * 100.0).round() / 100.0;
                     let rounded_take_profit = (market_price * 1.1 * 100.0).round() / 100.0;
-                    
+    
                     self.broker_records.push(BrokerOrderRecord {
-                        order_id: last_order.order_id.clone(),
-                        stop_loss: Some(rounded_stop_loss),   // Example: 10% loss threshold
-                        take_profit: Some(rounded_take_profit), // Example: 10% profit target
+                        order_id: self.pending_orders.last().unwrap().order_id.clone(),
+                        stop_loss: Some(rounded_stop_loss),
+                        take_profit: Some(rounded_take_profit),
                     });
-                    if let Some(last_record) = self.broker_records.last() {
-                        println!(
-                            "Client {} recorded internal broker order: BrokerOrderRecord {{ order_id: \"{}\", stop_loss: {:.2}, take_profit: {:.2} }}",
-                            self.id,
-                            last_record.order_id,
-                            last_record.stop_loss.unwrap_or_default(),
-                            last_record.take_profit.unwrap_or_default()
-                        );
-                    }
-                    
+                    // if let Some(last_record) = self.broker_records.last() {
+                    //     println!(
+                    //         "Client {} recorded internal broker order: {{ order_id: \"{}\", stop_loss: {:.2}, take_profit: {:.2} }}",
+                    //         self.id,
+                    //         last_record.order_id,
+                    //         last_record.stop_loss.unwrap_or_default(),
+                    //         last_record.take_profit.unwrap_or_default()
+                    //     );
+                    // }
                 }
+                
             }
         }
-        
-        // // Deduct capital immediately for buy orders
-        // let estimated_cost = self.estimate_order_cost(&order).await;
-        // if self.capital >= estimated_cost {
-        //     self.capital -= estimated_cost;
-        //     self.pending_orders.push(order);
-        // } else {
-        //     // Not enough capital
-        // }
     }
 
 
-    pub fn collect_orders(&mut self) -> Vec<KafkaOrderRequest> {
+    pub fn collect_orders(&mut self) -> Vec<Order> {
         let orders = self.pending_orders.clone();
         self.pending_orders.clear();
         orders
@@ -199,7 +219,7 @@ impl Client {
     pub fn monitor_broker_orders(
         &mut self,
         stock_data: Arc<Mutex<HashMap<String, f64>>>,
-    ) -> Vec<KafkaOrderRequest> {
+    ) -> Vec<Order> {
         let mut new_kafka_orders = Vec::new();
         let stock_data_guard = stock_data.blocking_lock();
 
@@ -211,7 +231,7 @@ impl Client {
                             "Take Profit triggered for Order {}: Selling Stock at {:.2}",
                             record.order_id, price
                         );
-                        new_kafka_orders.push(KafkaOrderRequest {
+                        new_kafka_orders.push(Order {
                             broker_id: 0, // Broker will populate
                             client_id: self.id,
                             order_id: uuid::Uuid::new_v4().to_string(),
@@ -231,7 +251,7 @@ impl Client {
                             "Stop Loss triggered for Order {}: Selling Stock at {:.2}",
                             record.order_id, price
                         );
-                        new_kafka_orders.push(KafkaOrderRequest {
+                        new_kafka_orders.push(Order {
                             broker_id: 0, // Broker will populate
                             client_id: self.id,
                             order_id: uuid::Uuid::new_v4().to_string(),
@@ -252,19 +272,81 @@ impl Client {
         new_kafka_orders
     }
 
-    pub async fn handle_price_update(&mut self, _price_update: &PriceUpdate) {
-        // Update portfolio or pending orders based on price updates
-        // ...
+    // pub async fn handle_completed_order(
+    //     &mut self,
+    //     order: &Order,
+    //     initial_price: f64,
+    //     stock_data: Arc<Mutex<HashMap<String, f64>>>,
+    // ) {
+    //     // Update capital
+    //     let quantity = order.quantity as i64;
+    //     let completed_price = order.price;
+    //     self.capital += initial_price * quantity as f64;
+    //     self.capital -= completed_price * quantity as f64;
+    
+    //     // Update portfolio
+    //     match order.order_action {
+    //         OrderAction::Buy => self.portfolio.update_holdings(&order.stock_symbol, quantity),
+    //         OrderAction::Sell => self.portfolio.update_holdings(&order.stock_symbol, -quantity),
+    //         _ => (),
+    //     }
+    
+    //     // Fetch market price
+    //     let market_price = stock_data.lock().await.get(&order.stock_symbol).cloned().unwrap_or(0.0);
+    //     let unrealized_pnl = (market_price - completed_price) * quantity as f64;
+    
+    //     // println!(
+    //     //     "Client {}: Processed completed order. Capital: {:.2}, Portfolio: {:?}, Market Price: {:.2}, Unrealized PnL: {:.2}",
+    //     //     self.id, self.capital, self.portfolio.get_holdings(), market_price, unrealized_pnl
+    //     // );
+    //     // println!(
+    //     //     "Client {}: Updated portfolio: {:?}",
+    //     //     self.id,
+    //     //     self.portfolio.get_holdings()
+    //     // );
+        
+    // }
+    
+
+    pub fn handle_rejected_order(&mut self, order: &Order) {
+        let initial_price = order.price; // Price initially deducted when placing the order
+
+        // Step 1: Restore the initial price to the capital
+        self.capital += initial_price * order.quantity as f64;
+
+        // Step 2: Remove rejected order from broker records
+        self.broker_records.retain(|record| record.order_id != order.order_id);
+
+        // println!(
+        //     "Client {}: Processed rejected order. Capital: {:.2}, Portfolio: {:?}",
+        //     self.id, self.capital, self.portfolio.get_holdings()
+        // );
     }
 
-    async fn estimate_order_cost(&self, order: &KafkaOrderRequest) -> f64 {
+    pub async fn handle_price_update(&mut self, price_update: &PriceUpdate) {
+        let stock_symbol = &price_update.name;
+        let current_market_price = price_update.price;
+
+        // Calculate the total market value of current holdings for the stock
+        let total_market_value = current_market_price * self.portfolio.get_quantity(stock_symbol) as f64;
+
+        // Update the capital to reflect current market value
+        self.capital = self.initial_capital + total_market_value;
+
+        println!(
+            "Client {}: Updated capital to {:.2} with market price update for {}",
+            self.id, self.capital, stock_symbol
+        );
+    }
+
+    async fn estimate_order_cost(&self, order: &Order) -> f64 {
         // For simplicity, assume we have access to the latest price
         // In a real application, you'd need to maintain a price cache
         let price_per_share = 100.0; // Placeholder value
         price_per_share * (order.quantity as f64)
     }
 
-    pub fn update_on_execution(&mut self, executed_order: &KafkaOrderRequest, execution_price: f64) {
+    pub fn update_on_execution(&mut self, executed_order: &Order, execution_price: f64) {
         match executed_order.order_type {
             OrderType::Market { .. } | OrderType::Limit { .. } => {
                 self.portfolio.update_holdings(&executed_order.stock_symbol, executed_order.quantity as i64);

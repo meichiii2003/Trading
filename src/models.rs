@@ -62,7 +62,7 @@ pub enum OrderStatus {
 }
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
-pub struct KafkaOrderRequest {
+pub struct Order {
     pub broker_id: u64,
     pub client_id: u64,
     pub order_id: String,
