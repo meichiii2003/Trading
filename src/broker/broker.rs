@@ -2,11 +2,13 @@
 
 use rdkafka::producer::{self, FutureProducer, FutureRecord};
 use tokio::sync::{broadcast::Receiver, Mutex};
+use std::fs::{File, OpenOptions};
+use std::io::{Read, Write};
 use std::sync::{Arc, atomic::AtomicU64};
 use std::collections::HashMap;
 use crate::broker::update_client_portfolio_in_json;
-use crate::models::{BrokerOrderRecord, Order, OrderAction, OrderType, PriceUpdate};
-use crate::broker::client::Client;
+use crate::models::{Order, OrderAction, OrderType, PriceUpdate};
+use crate::broker::client::{BrokerRecords, Client};
 
 
 pub struct Broker {
@@ -16,6 +18,7 @@ pub struct Broker {
     stock_data: Arc<Mutex<HashMap<String, f64>>>, // HashMap to store stock prices
     global_order_counter: Arc<AtomicU64>, // Shared counter for Order IDs
 }
+
 pub fn initialize_brokers(
     total_brokers: u64,
     price_tx: tokio::sync::broadcast::Sender<PriceUpdate>,
@@ -97,7 +100,7 @@ impl Broker {
         loop {
             for client in &self.clients {
                 let mut client = client.lock().await;
-                client.generate_order(self.id, self.stock_data.clone(), global_order_counter.clone()).await;
+                client.generate_order(self.id, self.stock_data.clone(), global_order_counter.clone(),"src/data/client_holdings.json", 5.0, 5.0).await;
 
                 let orders = client.collect_orders();
                 for order in orders {
@@ -209,41 +212,188 @@ impl Broker {
                     client
                         .portfolio
                         .update_holdings(&completed_order.stock_symbol, completed_order.quantity as i64);
-                    // Determine if this is a buy or sell order
-                    let is_buy = completed_order.order_action == OrderAction::Buy;
-
     
-                    // Update the JSON file
+                    let is_buy = completed_order.order_action == OrderAction::Buy;
+                    let total_cost = completed_order.quantity as f64 * completed_order.price;
+    
+                    if is_buy {
+                        // Deduct the cost from the client's capital
+                        if client.capital >= total_cost {
+                            client.capital -= total_cost;
+                        } else {
+                            println!(
+                                "Error: Client {} does not have sufficient capital for the completed buy order.",
+                                client.id
+                            );
+                            continue;
+                        }
+                    } else {
+                        // For sell orders, add the proceeds to the client's capital
+                        client.capital += total_cost;
+                    }
+    
+                    println!(
+                        "Client {}: Updated capital after completed order: {:.2}",
+                        client.id, client.capital
+                    );
+    
+                    // Update the JSON file with the new portfolio and capital
                     update_client_portfolio_in_json(
                         json_file_path,
                         completed_order.client_id,
                         completed_order.stock_symbol.clone(),
                         completed_order.quantity,
                         is_buy,
+                        completed_order.price, // Pass price per unit to update capital
                     )
                     .await;
     
-                    println!(
-                        "Updated Portfolio for Client {}: {:?}",
-                        client.id,
-                        client.portfolio.get_holdings()
-                    );
+                    // println!(
+                    //     "Updated Portfolio for Client {}: {:?}",
+                    //     client.id,
+                    //     client.portfolio.get_holdings()
+                    // );
                 }
             }
         }
     }
     
-    pub async fn process_rejected_orders(&mut self, rejected_orders: Vec<Order>) {
-        for order in rejected_orders {
-            for client in &self.clients {
-                let mut client = client.lock().await;
-                if client.id == order.client_id {
-                    client.handle_rejected_order(&order);
-                    break;
-                }
-            }
-        }
-    }
+    
+    // pub async fn process_rejected_orders(&mut self, rejected_orders: Vec<Order>) {
+    //     for order in rejected_orders {
+    //         for client in &self.clients {
+    //             let mut client = client.lock().await;
+    //             if client.id == order.client_id {
+    //                 client.handle_rejected_order(&order);
+    //                 break;
+    //             }
+    //         }
+    //     }
+    // }
+
+
+    // pub async fn process_rejected_orders(
+    //     &mut self,
+    //     rejected_orders: Vec<Order>,
+    // ) {
+    //     let mut processed_orders = std::collections::HashSet::new(); // Track processed orders
+    
+    //     for rejected_order in rejected_orders {
+    //         // Skip already processed orders
+    //         if !processed_orders.insert(rejected_order.order_id.clone()) {
+    //             continue;
+    //         }
+    
+    //         println!("Processing rejected order: {:?}", rejected_order);
+    
+    //         // Step 1: Restore capital
+    //         for client in &self.clients {
+    //             let mut client = client.lock().await;
+    //             if client.id == rejected_order.client_id {
+    //                 let amount_to_restore = rejected_order.quantity as f64 * rejected_order.price;
+    //                 client.capital += amount_to_restore;
+    
+    //                 println!(
+    //                     "Client {}: Restored {:.2} to capital for rejected order {}. New capital: {:.2}",
+    //                     client.id, amount_to_restore, rejected_order.order_id, client.capital
+    //                 );
+    
+    //                 // Remove the rejected order from pending orders
+    //                 client.pending_orders.retain(|order| order.order_id != rejected_order.order_id);
+    //             }
+    //         }
+    //     }
+    // }
+    
+    
+
+                    // // Remove from in-memory broker records
+                    // client.broker_records.retain(|record| {
+                    //     if record.order_id == rejected_order.order_id {
+                    //         println!(
+                    //             "Removing in-memory record: {{ client_id: {}, order_id: {}, stop_loss: {:?}, take_profit: {:?} }}",
+                    //             record.client_id, record.order_id, record.stop_loss, record.take_profit
+                    //         );
+                    //         false
+                    //     } else {
+                    //         true
+                    //     }
+                    // });
+            
+
+
+        //     // Step 2: Read broker records from JSON file
+        //     let mut file = match File::open(broker_records_file) {
+        //         Ok(file) => file,
+        //         Err(err) => {
+        //             println!("Error opening JSON file: {}. Skipping order {}.", err, rejected_order.order_id);
+        //             continue;
+        //         }
+        //     };
+
+        //     let mut json_data = String::new();
+        //     if let Err(err) = file.read_to_string(&mut json_data) {
+        //         println!("Error reading JSON file: {}. Skipping order {}.", err, rejected_order.order_id);
+        //         continue;
+        //     }
+
+        //     let mut broker_records: BrokerRecords = match serde_json::from_str(&json_data) {
+        //         Ok(records) => records,
+        //         Err(err) => {
+        //             println!("Error parsing JSON file: {}. Skipping order {}.", err, rejected_order.order_id);
+        //             continue;
+        //         }
+        //     };
+
+        //     // Step 3: Remove the rejected order from broker records
+        //     let initial_count = broker_records.records.len();
+        //     broker_records.records.retain(|record| record.order_id != rejected_order.order_id);
+
+        //     if broker_records.records.len() < initial_count {
+        //         println!(
+        //             "Successfully removed rejected order {} from broker records JSON.",
+        //             rejected_order.order_id
+        //         );
+        //     } else {
+        //         println!(
+        //             "Order {} not found in broker records JSON. No removal performed.",
+        //             rejected_order.order_id
+        //         );
+        //     }
+
+        //     // Step 4: Write updated records back to the JSON file
+        //     let updated_json = match serde_json::to_string_pretty(&broker_records) {
+        //         Ok(json) => json,
+        //         Err(err) => {
+        //             println!(
+        //                 "Error serializing updated JSON: {}. Skipping write for order {}.",
+        //                 err, rejected_order.order_id
+        //             );
+        //             continue;
+        //         }
+        //     };
+
+        //     if let Err(err) = OpenOptions::new()
+        //         .write(true)
+        //         .truncate(true)
+        //         .open(broker_records_file)
+        //         .and_then(|mut file| file.write_all(updated_json.as_bytes()))
+        //     {
+        //         println!(
+        //             "Error writing updated JSON file: {}. Skipping write for order {}.",
+        //             err, rejected_order.order_id
+        //         );
+        //     } else {
+        //         println!(
+        //             "Broker records JSON updated successfully after removing order {}.",
+        //             rejected_order.order_id
+        //         );
+        //     }
+        // }
+    
+
+       
+
 
     pub async fn process_client_orders(&self, client: &Arc<Mutex<Client>>, producer: &FutureProducer) {
         // Collect orders from the client

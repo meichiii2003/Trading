@@ -6,24 +6,62 @@
         {
           "client_id": 1,
           "portfolio": {
-            "TSLA": 6
+            "TSLA": {
+              "quantity": 3,
+              "average_price": 97.28000000000002
+            },
+            "MSFT": {
+              "quantity": 2,
+              "average_price": 84.77
+            },
+            "APPL": {
+              "quantity": 11,
+              "average_price": 90.17454545454548
+            }
           },
-          "buy_transaction_count": 1,
-          "sell_transaction_count": 0
+          "buy_transaction_count": 7,
+          "sell_transaction_count": 0,
+          "capital": 6445.989999999999
         },
         {
           "client_id": 2,
           "portfolio": {
-            "GOOG": 3
+            "APPL": {
+              "quantity": 1,
+              "average_price": 76.7
+            },
+            "AMZN": {
+              "quantity": 13,
+              "average_price": 96.82538461538462
+            }
           },
-          "buy_transaction_count": 1,
-          "sell_transaction_count": 0
+          "buy_transaction_count": 4,
+          "sell_transaction_count": 0,
+          "capital": 8405.31
         },
         {
           "client_id": 3,
-          "portfolio": {},
-          "buy_transaction_count": 0,
-          "sell_transaction_count": 0
+          "portfolio": {
+            "TSLA": {
+              "quantity": 3,
+              "average_price": 100.73333333333332
+            },
+            "AMZN": {
+              "quantity": 9,
+              "average_price": 99.17
+            },
+            "MSFT": {
+              "quantity": 4,
+              "average_price": 71.46
+            },
+            "APPL": {
+              "quantity": 8,
+              "average_price": 76.7
+            }
+          },
+          "buy_transaction_count": 5,
+          "sell_transaction_count": 0,
+          "capital": 7905.829999999999
         }
       ]
     },
@@ -33,22 +71,66 @@
         {
           "client_id": 4,
           "portfolio": {
-            "TSLA": 4
+            "TSLA": {
+              "quantity": 5,
+              "average_price": 94.55
+            },
+            "APPL": {
+              "quantity": 7,
+              "average_price": 86.54
+            },
+            "AMZN": {
+              "quantity": 6,
+              "average_price": 91.86
+            },
+            "MSFT": {
+              "quantity": 7,
+              "average_price": 84.84
+            },
+            "GOOG": {
+              "quantity": 12,
+              "average_price": 104.9725
+            }
           },
-          "buy_transaction_count": 1,
-          "sell_transaction_count": 0
+          "buy_transaction_count": 6,
+          "sell_transaction_count": 0,
+          "capital": 6516.760000000001
         },
         {
           "client_id": 5,
-          "portfolio": {},
-          "buy_transaction_count": 0,
-          "sell_transaction_count": 0
+          "portfolio": {
+            "MSFT": {
+              "quantity": 3,
+              "average_price": 89.16000000000001
+            },
+            "AMZN": {
+              "quantity": 7,
+              "average_price": 102.0
+            },
+            "TSLA": {
+              "quantity": 1,
+              "average_price": 87.31
+            },
+            "GOOG": {
+              "quantity": 10,
+              "average_price": 114.91
+            }
+          },
+          "buy_transaction_count": 4,
+          "sell_transaction_count": 0,
+          "capital": 7782.109999999999
         },
         {
           "client_id": 6,
-          "portfolio": {},
-          "buy_transaction_count": 0,
-          "sell_transaction_count": 0
+          "portfolio": {
+            "APPL": {
+              "quantity": 10,
+              "average_price": 75.51
+            }
+          },
+          "buy_transaction_count": 3,
+          "sell_transaction_count": 0,
+          "capital": 7780.460000000001
         }
       ]
     },
@@ -58,28 +140,66 @@
         {
           "client_id": 7,
           "portfolio": {
-            "AMZN": 7
+            "GOOG": {
+              "quantity": 15,
+              "average_price": 109.72
+            },
+            "APPL": {
+              "quantity": 10,
+              "average_price": 91.33
+            },
+            "TSLA": {
+              "quantity": 10,
+              "average_price": 104.54
+            }
           },
-          "buy_transaction_count": 1,
-          "sell_transaction_count": 0
+          "buy_transaction_count": 6,
+          "sell_transaction_count": 0,
+          "capital": 5477.5
         },
         {
           "client_id": 8,
           "portfolio": {
-            "APPL": 8
+            "MSFT": {
+              "quantity": 17,
+              "average_price": 90.65941176470588
+            },
+            "APPL": {
+              "quantity": 11,
+              "average_price": 76.99
+            }
           },
-          "buy_transaction_count": 1,
-          "sell_transaction_count": 0
+          "buy_transaction_count": 8,
+          "sell_transaction_count": 0,
+          "capital": 6235.45
         },
         {
           "client_id": 9,
           "portfolio": {
-            "TSLA": 4,
-            "APPL": 4,
-            "AMZN": 9
+            "GOOG": {
+              "quantity": 5,
+              "average_price": 133.48
+            },
+            "APPL": {
+              "quantity": 4,
+              "average_price": 75.49
+            },
+            "AMZN": {
+              "quantity": 3,
+              "average_price": 93.03666666666668
+            },
+            "MSFT": {
+              "quantity": 9,
+              "average_price": 74.41
+            },
+            "TSLA": {
+              "quantity": 8,
+              "average_price": 85.24
+            }
           },
-          "buy_transaction_count": 3,
-          "sell_transaction_count": 0
+          "buy_transaction_count": 6,
+          "sell_transaction_count": 0,
+          "capital": 7399.92
         }
       ]
     },
@@ -88,25 +208,63 @@
       "clients": [
         {
           "client_id": 10,
-          "portfolio": {},
-          "buy_transaction_count": 0,
-          "sell_transaction_count": 0
+          "portfolio": {
+            "AMZN": {
+              "quantity": 19,
+              "average_price": 107.09105263157892
+            },
+            "APPL": {
+              "quantity": 3,
+              "average_price": 64.38
+            },
+            "GOOG": {
+              "quantity": 5,
+              "average_price": 127.73999999999998
+            },
+            "TSLA": {
+              "quantity": 6,
+              "average_price": 108.66
+            },
+            "MSFT": {
+              "quantity": 9,
+              "average_price": 82.66
+            }
+          },
+          "buy_transaction_count": 6,
+          "sell_transaction_count": 0,
+          "capital": 5737.529999999999
         },
         {
           "client_id": 11,
           "portfolio": {
-            "APPL": 2
+            "TSLA": {
+              "quantity": 2,
+              "average_price": 113.29
+            }
           },
           "buy_transaction_count": 1,
-          "sell_transaction_count": 0
+          "sell_transaction_count": 0,
+          "capital": 9773.42
         },
         {
           "client_id": 12,
           "portfolio": {
-            "TSLA": 4
+            "MSFT": {
+              "quantity": 19,
+              "average_price": 86.47105263157894
+            },
+            "TSLA": {
+              "quantity": 12,
+              "average_price": 108.42416666666668
+            },
+            "AMZN": {
+              "quantity": 1,
+              "average_price": 113.41
+            }
           },
-          "buy_transaction_count": 1,
-          "sell_transaction_count": 0
+          "buy_transaction_count": 6,
+          "sell_transaction_count": 0,
+          "capital": 6942.55
         }
       ]
     },
@@ -115,26 +273,63 @@
       "clients": [
         {
           "client_id": 13,
-          "portfolio": {},
-          "buy_transaction_count": 0,
-          "sell_transaction_count": 0
+          "portfolio": {
+            "GOOG": {
+              "quantity": 20,
+              "average_price": 105.545
+            },
+            "AMZN": {
+              "quantity": 7,
+              "average_price": 99.6
+            },
+            "APPL": {
+              "quantity": 7,
+              "average_price": 76.7
+            },
+            "TSLA": {
+              "quantity": 2,
+              "average_price": 95.94
+            }
+          },
+          "buy_transaction_count": 7,
+          "sell_transaction_count": 0,
+          "capital": 5733.099999999999
         },
         {
           "client_id": 14,
           "portfolio": {
-            "GOOG": 4,
-            "MSFT": 8
+            "GOOG": {
+              "quantity": 11,
+              "average_price": 111.21090909090908
+            },
+            "TSLA": {
+              "quantity": 3,
+              "average_price": 97.28000000000002
+            },
+            "APPL": {
+              "quantity": 3,
+              "average_price": 97.00666666666666
+            }
           },
-          "buy_transaction_count": 2,
-          "sell_transaction_count": 0
+          "buy_transaction_count": 7,
+          "sell_transaction_count": 0,
+          "capital": 7697.02
         },
         {
           "client_id": 15,
           "portfolio": {
-            "GOOG": 7
+            "TSLA": {
+              "quantity": 9,
+              "average_price": 94.47
+            },
+            "AMZN": {
+              "quantity": 4,
+              "average_price": 97.57
+            }
           },
-          "buy_transaction_count": 1,
-          "sell_transaction_count": 0
+          "buy_transaction_count": 4,
+          "sell_transaction_count": 0,
+          "capital": 7871.209999999999
         }
       ]
     }

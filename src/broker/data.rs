@@ -6,10 +6,18 @@ use std::io::{Read, Write};
 #[derive(Serialize, Deserialize)]
 struct ClientData {
     client_id: u64,
-    portfolio: HashMap<String, u64>,
+    portfolio: HashMap<String, StockHolding>, // Stock symbol to StockHolding mapping
     buy_transaction_count: u64,  // Count of completed buy transactions
     sell_transaction_count: u64, // Count of completed sell transactions
+    capital: f64,
 }
+#[derive(Serialize, Deserialize)]
+struct StockHolding {
+    quantity: u64,
+    average_price: f64,
+}
+
+
 
 #[derive(Serialize, Deserialize)]
 struct BrokerData {
@@ -23,6 +31,7 @@ struct BrokersData {
 }
 
 pub fn reset_client_holdings_json(file_path: &str, total_brokers: u64, clients_per_broker: u64) {
+    let initial_capital = 10_000.0; // Default initial capital
     let mut brokers_data = Vec::new();
 
     for broker_id in 1..=total_brokers {
@@ -35,6 +44,7 @@ pub fn reset_client_holdings_json(file_path: &str, total_brokers: u64, clients_p
                 portfolio: HashMap::new(),
                 buy_transaction_count: 0,
                 sell_transaction_count: 0,
+                capital: initial_capital,
             });
         }
         brokers_data.push(BrokerData {
@@ -51,8 +61,9 @@ pub fn reset_client_holdings_json(file_path: &str, total_brokers: u64, clients_p
     file.write_all(json_data.as_bytes())
         .expect("Failed to write to JSON file");
 
-    println!("JSON file reset with empty portfolios and transaction counts.");
+    println!("JSON file reset with empty portfolios, transaction counts, and initial capital.");
 }
+
 
 pub async fn update_client_portfolio_in_json(
     file_path: &str,
@@ -60,6 +71,7 @@ pub async fn update_client_portfolio_in_json(
     stock_symbol: String,
     quantity: u64,
     is_buy: bool,
+    price_per_unit: f64,
 ) {
     // Read the existing JSON file
     let mut file = match File::open(file_path) {
@@ -85,22 +97,53 @@ pub async fn update_client_portfolio_in_json(
         }
     };
 
-    // Update the client portfolio and transaction counts
+    // Update the client portfolio and capital
     let mut updated = false;
     for broker in data.brokers.iter_mut() {
         for client in broker.clients.iter_mut() {
             if client.client_id == client_id {
                 if is_buy {
-                    *client.portfolio.entry(stock_symbol.clone()).or_insert(0) += quantity;
+                    // Update portfolio for Buy
+                    let holding = client.portfolio.entry(stock_symbol.clone()).or_insert(StockHolding {
+                        quantity: 0,
+                        average_price: 0.0,
+                    });
+
+                    let total_cost = quantity as f64 * price_per_unit;
+
+                    // Calculate the new average price
+                    holding.average_price = ((holding.average_price * holding.quantity as f64) + total_cost)
+                        / (holding.quantity + quantity) as f64;
+                    holding.quantity += quantity;
+
+                    // Deduct capital
+                    client.capital -= total_cost;
                     client.buy_transaction_count += 1; // Increment buy transaction count
                 } else {
-                    let current_qty = client.portfolio.entry(stock_symbol.clone()).or_insert(0);
-                    if *current_qty >= quantity {
-                        *current_qty -= quantity;
-                        client.sell_transaction_count += 1; // Increment sell transaction count
+                    // Update portfolio for Sell
+                    if let Some(holding) = client.portfolio.get_mut(&stock_symbol) {
+                        if holding.quantity >= quantity {
+                            holding.quantity -= quantity;
+
+                            // Add capital
+                            let total_revenue = quantity as f64 * price_per_unit;
+                            client.capital += total_revenue;
+                            client.sell_transaction_count += 1; // Increment sell transaction count
+
+                            // Remove stock entry if quantity becomes zero
+                            if holding.quantity == 0 {
+                                client.portfolio.remove(&stock_symbol);
+                            }
+                        } else {
+                            println!(
+                                "Error: Client {} has insufficient shares of {} to sell.",
+                                client_id, stock_symbol
+                            );
+                            return;
+                        }
                     } else {
                         println!(
-                            "Error: Client {} has insufficient shares of {} to sell.",
+                            "Error: Client {} does not own any shares of {} to sell.",
                             client_id, stock_symbol
                         );
                         return;
@@ -114,7 +157,6 @@ pub async fn update_client_portfolio_in_json(
             break;
         }
     }
-
 
     if !updated {
         println!("Client ID {} not found in JSON data.", client_id);
@@ -137,3 +179,6 @@ pub async fn update_client_portfolio_in_json(
     //     println!("Successfully updated JSON for client ID {}", client_id);
     // }
 }
+
+
+

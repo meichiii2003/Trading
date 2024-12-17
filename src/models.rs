@@ -74,9 +74,10 @@ pub struct Order {
     pub status: OrderStatus,
 }
 
-#[derive(Serialize, Debug, Deserialize, Clone)]
-pub struct BrokerOrderRecord {
-    pub order_id: String,
-    pub stop_loss: Option<f64>,
-    pub take_profit: Option<f64>,
-}
+// #[derive(Serialize, Debug, Deserialize, Clone)]
+// pub struct BrokerOrderRecord {
+//     pub client_id: u64,
+//     pub order_id: String,
+//     pub stop_loss: Option<f64>,
+//     pub take_profit: Option<f64>,
+// }

@@ -8,6 +8,9 @@
 
 // main.rs
 
+mod stock_updater;
+
+use stock_updater::start_price_updater;
 mod consumer;
 mod broker;
 mod models;
@@ -23,11 +26,12 @@ use std::collections::HashMap;
 use std::sync::atomic::AtomicU64;
 use tokio::sync::Barrier;
 use tokio::sync::Mutex;
+use tokio::sync::Notify;
 use std::sync::Arc;
 pub use broker::initialize_brokers; 
 
 use crate::broker::data::reset_client_holdings_json;
-use crate::broker::update_client_portfolio_in_json;
+use crate::broker::client::reset_broker_records;
 use crate::broker::data;
 use crate::broker::broker::Broker;
 use order_processor::start_order_processor;
@@ -36,6 +40,8 @@ use rdkafka::ClientConfig;
 
 #[tokio::main]
 async fn main() {
+    // Shared shutdown signal
+    let shutdown_notify = Arc::new(Notify::new());
     // 1. Global order counter for unique order IDs across all brokers
     let global_order_counter = Arc::new(AtomicU64::new(1)); // Start from Order 1
     
@@ -93,7 +99,9 @@ async fn main() {
     let clients_per_broker = 3;
     // Reset all client portfolios to empty
     reset_client_holdings_json(json_file_path, total_brokers, clients_per_broker);
+    reset_broker_records("src/data/broker_records.json");
 
+    
 
     // 6. Start the order processor for completed and rejected orders
     let brokers: Vec<Arc<Mutex<Broker>>> = broker_handles.iter().map(|handle| {
@@ -154,8 +162,14 @@ async fn main() {
     let processor_handle = tokio::spawn(async move {
         order_processor::start_order_processor(brokers.clone(), market_prices.clone()).await;
     });
+    
+    // Start stock price updater
+   let stock_updater_handle = tokio::spawn(async move {
+    stock_updater::start_price_updater().await;
+   });
+    
     // Wait for both tasks (or any additional tasks)
-    let _ = tokio::join!(processor_handle, consumer_handle, order_consumer_handle);
+    let _ = tokio::join!(stock_updater_handle, processor_handle, consumer_handle, order_consumer_handle);
 
     // 4. Wait for the market to close (simulate trading hours)
     // For example, run for 8 hours
@@ -174,6 +188,10 @@ async fn main() {
     // performance::generate_reports().await;
 
     // 8. Exit the application
+    
+
+    println!("Stock price updater has stopped.");
+
 }
 
 

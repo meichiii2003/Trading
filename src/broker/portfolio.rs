@@ -12,7 +12,7 @@ impl Portfolio {
             holdings: HashMap::new(),
         }
     }
-
+    
     /// Update the holdings when a buy or sell order is executed.
     pub fn update_holdings(&mut self, stock_symbol: &str, quantity_change: i64) {
         let entry = self.holdings.entry(stock_symbol.to_string()).or_insert(0);

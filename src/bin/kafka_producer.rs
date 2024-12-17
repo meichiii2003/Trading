@@ -194,14 +194,14 @@ async fn main() {
             println!("---------------------");
         }
 
-        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
     }
 }
 
 // Simulate random price update
 fn update_price(current_price: f64) -> f64 {
     let mut rng = rand::thread_rng();
-    let change = rng.gen_range(-1.0..1.0); // Random change between -1.0 and 1.0
+    let change = rng.gen_range(-20.0..20.0); // Random change between -1.0 and 1.0
     let updated_price = current_price + change;
     ((updated_price.max(0.0)) * 100.0).round() / 100.0 // Ensure price is >= 0 and round to 2 decimals
 }
