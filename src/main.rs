@@ -55,7 +55,7 @@ async fn main() {
     reset_client_holdings_json(json_file_path, total_brokers, clients_per_broker);
 
     // 6. Create the Kafka producer
-    // Start the order processor
+    // Start the order processor, to send order to kafka i think
     fn create_producer() -> FutureProducer {
         ClientConfig::new()
             .set("bootstrap.servers", "localhost:9092")
@@ -63,35 +63,38 @@ async fn main() {
             .create()
             .expect("Producer creation error")
     }
+    
+    // 7. Create a stop signal for the broker tasks
     let stop_signal = Arc::new(AtomicBool::new(false));
     
-    // 7. Start the Kafka consumer (receive stock prices)
+    // 8. Start stock price updater (yikai side, generate stock prices and send to Kafka)
+    let stock_updater_handle = tokio::spawn(async move {
+        stock_updater::start_price_updater().await;
+    });
+
+    // 9. Start the Kafka consumer (i receive stock prices from kafka)
     let consumer_handle = tokio::spawn(async move {
         consumer::run_consumer(price_tx.clone()).await;
     });
 
-    // 8. Start the order processor (receive completed and rejected orders)
-    let processor_handle = tokio::spawn(async move {
-        order_processor::start_order_processor().await;
-    });
-
-    //consumer_handle.await.unwrap();//过后用这个 不要order handle
-    // 9. Start the order consumer (yikai side mix match)
+    //consumer_handle.await.unwrap();//过后用这个 不要order handle //ignore
+    // 10. Start the order consumer (yikai side, reject or complete the orders and send to kafka)
     let order_consumer_handle = tokio::spawn(async move {
         order_consumer::start_order_consumer().await;
     });
 
-    // 10. Start stock price updater (yikai side, generate random stock prices)
-    let stock_updater_handle = tokio::spawn(async move {
-        stock_updater::start_price_updater().await;
+    // 11. Start the order processor (receive completed and rejected orders)
+    let processor_handle = tokio::spawn(async move {
+        order_processor::start_order_processor().await;
     });
+    
     stop_signal.store(true, Ordering::SeqCst);  
 
-    // 11. Wait for all broker tasks to complete
+    // 12. Wait for all broker tasks to complete
     let _ = tokio::join!(stock_updater_handle, processor_handle, consumer_handle, order_consumer_handle);
     //broker.stop();
     
-    // 12. Generate client performance report
+    // 13. Generate client performance report
     println!("MARKET CLOSED");
     let json_file_path = "src/data/client_holdings.json";
     performance::generate_client_report(json_file_path);
