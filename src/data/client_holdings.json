@@ -6,122 +6,74 @@
         {
           "client_id": 1,
           "portfolio": {
-            "CTVA": {
+            "OXY": {
+              "quantity": 6,
+              "average_price": 118.09
+            },
+            "PSX": {
+              "quantity": 3,
+              "average_price": 119.14
+            },
+            "SLB": {
+              "quantity": 6,
+              "average_price": 107.83
+            },
+            "MSFT": {
               "quantity": 23,
-              "average_price": 91.17652173913044
-            },
-            "ABBV": {
-              "quantity": 15,
-              "average_price": 107.98
-            },
-            "NKE": {
-              "quantity": 52,
-              "average_price": 97.34961538461536
+              "average_price": 91.04826086956524
             },
             "UNH": {
-              "quantity": 42,
-              "average_price": 95.7785714285714
+              "quantity": 4,
+              "average_price": 93.46
             },
-            "FMC": {
-              "quantity": 12,
-              "average_price": 114.4475
-            },
-            "SBUX": {
-              "quantity": 8,
-              "average_price": 122.28
-            },
-            "PFE": {
-              "quantity": 9,
-              "average_price": 107.67
+            "GILD": {
+              "quantity": 7,
+              "average_price": 103.18999999999998
             }
           },
-          "buy_transaction_count": 40,
-          "sell_transaction_count": 7,
-          "capital": -6170.360000000001
+          "buy_transaction_count": 42,
+          "sell_transaction_count": 13,
+          "capital": 4423.379999999999
         },
         {
           "client_id": 2,
           "portfolio": {
-            "HAL": {
-              "quantity": 28,
-              "average_price": 105.94464285714284
+            "GILD": {
+              "quantity": 48,
+              "average_price": 102.21583333333332
             },
-            "GOOG": {
-              "quantity": 4,
-              "average_price": 86.26
-            },
-            "VLO": {
-              "quantity": 11,
-              "average_price": 102.0
-            },
-            "TSLA": {
-              "quantity": 6,
-              "average_price": 98.16
-            },
-            "PFE": {
-              "quantity": 8,
-              "average_price": 99.72
-            },
-            "UNH": {
-              "quantity": 4,
-              "average_price": 97.11
-            },
-            "CTVA": {
+            "SLB": {
               "quantity": 9,
-              "average_price": 70.38
+              "average_price": 90.61
             },
-            "ADM": {
-              "quantity": 6,
-              "average_price": 77.18
-            },
-            "ABBV": {
-              "quantity": 21,
-              "average_price": 107.26476190476193
+            "PSX": {
+              "quantity": 9,
+              "average_price": 80.76
             }
           },
-          "buy_transaction_count": 41,
-          "sell_transaction_count": 11,
-          "capital": -1507.4399999999982
+          "buy_transaction_count": 48,
+          "sell_transaction_count": 10,
+          "capital": 2687.74
         },
         {
           "client_id": 3,
           "portfolio": {
             "APPL": {
-              "quantity": 8,
-              "average_price": 115.8
-            },
-            "BAC": {
-              "quantity": 6,
-              "average_price": 120.21
-            },
-            "HD": {
-              "quantity": 10,
-              "average_price": 90.03
-            },
-            "PFE": {
-              "quantity": 9,
-              "average_price": 120.68444444444442
-            },
-            "VLO": {
               "quantity": 18,
-              "average_price": 107.07999999999998
+              "average_price": 105.89444444444445
             },
-            "FMC": {
-              "quantity": 7,
-              "average_price": 105.05
-            },
-            "ABBV": {
+            "MSFT": {
               "quantity": 10,
-              "average_price": 112.34499999999998
+              "average_price": 102.38
             },
-            "NKE": {
-              "quantity": 39,
-              "average_price": 89.6474358974359
+            "GILD": {
+              "quantity": 10,
+              "average_price": 96.215
             }
           },
-          "buy_transaction_count": 37,
-          "sell_transaction_count": 10,
-          "capital": -1304.3599999999983
+          "buy_transaction_count": 45,
+          "sell_transaction_count": 15,
+          "capital": 4964.279999999998
         }
       ]
     },
@@ -131,102 +83,114 @@
         {
           "client_id": 4,
           "portfolio": {
-            "MOS": {
-              "quantity": 12,
-              "average_price": 98.69
-            },
-            "AXP": {
-              "quantity": 9,
-              "average_price": 93.66
-            },
-            "FMC": {
-              "quantity": 21,
-              "average_price": 107.13095238095238
-            },
-            "META": {
-              "quantity": 4,
-              "average_price": 69.55
-            },
             "PG": {
-              "quantity": 29,
-              "average_price": 109.9403448275862
+              "quantity": 54,
+              "average_price": 98.80314814814814
+            },
+            "AMZN": {
+              "quantity": 4,
+              "average_price": 100.55
+            },
+            "NVDA": {
+              "quantity": 3,
+              "average_price": 102.0
+            },
+            "XOM": {
+              "quantity": 7,
+              "average_price": 95.85
+            },
+            "CVX": {
+              "quantity": 16,
+              "average_price": 106.015
             }
           },
-          "buy_transaction_count": 28,
-          "sell_transaction_count": 5,
-          "capital": 2109.76
+          "buy_transaction_count": 47,
+          "sell_transaction_count": 11,
+          "capital": 1436.1899999999982
         },
         {
           "client_id": 5,
           "portfolio": {
-            "MOS": {
+            "MSFT": {
+              "quantity": 19,
+              "average_price": 96.41157894736844
+            },
+            "SBUX": {
+              "quantity": 10,
+              "average_price": 119.83
+            },
+            "XOM": {
+              "quantity": 18,
+              "average_price": 105.7622222222222
+            },
+            "CF": {
+              "quantity": 4,
+              "average_price": 124.4
+            },
+            "AMZN": {
               "quantity": 23,
-              "average_price": 106.53
+              "average_price": 95.01521739130432
             },
-            "AXP": {
-              "quantity": 2,
-              "average_price": 102.68
-            },
-            "WFC": {
-              "quantity": 16,
-              "average_price": 108.65375
+            "JNJ": {
+              "quantity": 10,
+              "average_price": 96.4
             },
             "PG": {
-              "quantity": 12,
-              "average_price": 109.3725
+              "quantity": 6,
+              "average_price": 104.25
             },
-            "FMC": {
-              "quantity": 14,
-              "average_price": 102.635
+            "TFC": {
+              "quantity": 6,
+              "average_price": 102.48
             },
-            "BK": {
-              "quantity": 11,
-              "average_price": 101.64727272727272
-            },
-            "BP": {
-              "quantity": 1,
-              "average_price": 100.24
+            "CVX": {
+              "quantity": 47,
+              "average_price": 104.37723404255318
             }
           },
-          "buy_transaction_count": 35,
-          "sell_transaction_count": 6,
-          "capital": 476.4299999999988
+          "buy_transaction_count": 57,
+          "sell_transaction_count": 13,
+          "capital": -5142.890000000002
         },
         {
           "client_id": 6,
           "portfolio": {
-            "UNH": {
+            "JNJ": {
+              "quantity": 4,
+              "average_price": 93.04
+            },
+            "TOT": {
+              "quantity": 7,
+              "average_price": 95.15
+            },
+            "MSFT": {
+              "quantity": 6,
+              "average_price": 99.45
+            },
+            "XOM": {
               "quantity": 9,
-              "average_price": 100.6
+              "average_price": 106.85
             },
-            "WFC": {
-              "quantity": 15,
-              "average_price": 97.256
+            "IBM": {
+              "quantity": 2,
+              "average_price": 123.39
             },
-            "SLB": {
-              "quantity": 10,
-              "average_price": 94.39
-            },
-            "AXP": {
-              "quantity": 3,
-              "average_price": 105.84
-            },
-            "MOS": {
-              "quantity": 45,
-              "average_price": 104.34644444444444
+            "META": {
+              "quantity": 1,
+              "average_price": 102.0
             },
             "PG": {
-              "quantity": 31,
-              "average_price": 116.54322580645163
+              "quantity": 10,
+              "average_price": 104.25
             },
-            "FMC": {
-              "quantity": 16,
-              "average_price": 105.35
+            "AMZN": {
+              "quantity": 34,
+              "average_price": 104.38382352941176
             }
           },
           "buy_transaction_count": 42,
-          "sell_transaction_count": 7,
-          "capital": -5348.350000000001
+          "sell_transaction_count": 13,
+          "capital": 1873.220000000001
         }
       ]
     },
@@ -236,130 +200,114 @@
         {
           "client_id": 7,
           "portfolio": {
-            "IBM": {
-              "quantity": 56,
-              "average_price": 109.49410714285716
+            "MOS": {
+              "quantity": 2,
+              "average_price": 98.3
             },
-            "TMO": {
-              "quantity": 40,
-              "average_price": 104.38174999999998
+            "ABBV": {
+              "quantity": 1,
+              "average_price": 101.4
             },
-            "GOOG": {
-              "quantity": 25,
-              "average_price": 96.764
-            },
-            "WFC": {
-              "quantity": 13,
-              "average_price": 98.5453846153846
+            "META": {
+              "quantity": 9,
+              "average_price": 96.02
             },
             "JNJ": {
-              "quantity": 35,
-              "average_price": 101.42600000000002
+              "quantity": 9,
+              "average_price": 107.25
+            },
+            "APPL": {
+              "quantity": 17,
+              "average_price": 120.46235294117643
+            },
+            "PFE": {
+              "quantity": 18,
+              "average_price": 108.81166666666668
+            },
+            "PSX": {
+              "quantity": 7,
+              "average_price": 110.78
+            },
+            "OXY": {
+              "quantity": 4,
+              "average_price": 102.0
+            },
+            "COP": {
+              "quantity": 10,
+              "average_price": 124.39
             }
           },
-          "buy_transaction_count": 40,
-          "sell_transaction_count": 5,
-          "capital": -7540.719999999999
+          "buy_transaction_count": 44,
+          "sell_transaction_count": 14,
+          "capital": -525.2200000000007
         },
         {
           "client_id": 8,
           "portfolio": {
-            "CALM": {
+            "META": {
               "quantity": 9,
-              "average_price": 99.27
+              "average_price": 113.89
             },
-            "OXY": {
-              "quantity": 3,
-              "average_price": 106.39
+            "COP": {
+              "quantity": 6,
+              "average_price": 110.45
             },
-            "USB": {
-              "quantity": 21,
-              "average_price": 106.93333333333332
+            "TFC": {
+              "quantity": 17,
+              "average_price": 112.27
+            },
+            "ADM": {
+              "quantity": 6,
+              "average_price": 75.82
             },
             "JNJ": {
-              "quantity": 11,
-              "average_price": 105.99636363636364
+              "quantity": 21,
+              "average_price": 96.50761904761904
             },
-            "TMO": {
-              "quantity": 4,
-              "average_price": 102.0
+            "PFE": {
+              "quantity": 62,
+              "average_price": 102.97741935483872
             },
-            "WFC": {
-              "quantity": 3,
-              "average_price": 93.63
+            "NKE": {
+              "quantity": 6,
+              "average_price": 106.98
             },
-            "IBM": {
-              "quantity": 73,
-              "average_price": 110.22698630136983
+            "MSFT": {
+              "quantity": 59,
+              "average_price": 97.8
             },
-            "GILD": {
-              "quantity": 10,
-              "average_price": 99.77
-            },
-            "BP": {
-              "quantity": 4,
-              "average_price": 100.24
-            },
-            "C": {
-              "quantity": 11,
-              "average_price": 109.47909090909091
-            },
-            "GOOG": {
-              "quantity": 3,
-              "average_price": 87.41000000000001
+            "SLB": {
+              "quantity": 17,
+              "average_price": 104.28000000000002
             }
           },
-          "buy_transaction_count": 41,
+          "buy_transaction_count": 47,
           "sell_transaction_count": 8,
-          "capital": -6245.850000000002
+          "capital": -10718.04
         },
         {
           "client_id": 9,
           "portfolio": {
-            "GOOG": {
-              "quantity": 18,
-              "average_price": 94.71166666666666
-            },
-            "TMO": {
-              "quantity": 61,
-              "average_price": 104.95557377049184
-            },
-            "JNJ": {
-              "quantity": 10,
-              "average_price": 106.18000000000002
-            },
-            "USB": {
-              "quantity": 8,
-              "average_price": 97.3
-            },
-            "AMD": {
-              "quantity": 2,
-              "average_price": 113.28
-            },
-            "C": {
-              "quantity": 12,
-              "average_price": 116.24916666666664
-            },
-            "PFE": {
-              "quantity": 1,
-              "average_price": 90.69
-            },
-            "WFC": {
-              "quantity": 3,
-              "average_price": 116.36
-            },
-            "HD": {
-              "quantity": 8,
-              "average_price": 100.39
-            },
             "TFC": {
               "quantity": 1,
-              "average_price": 96.87
+              "average_price": 110.96
+            },
+            "COP": {
+              "quantity": 12,
+              "average_price": 87.81
+            },
+            "TSLA": {
+              "quantity": 6,
+              "average_price": 109.59
+            },
+            "APPL": {
+              "quantity": 25,
+              "average_price": 110.60240000000002
             }
           },
-          "buy_transaction_count": 38,
-          "sell_transaction_count": 7,
-          "capital": -2514.53
+          "buy_transaction_count": 41,
+          "sell_transaction_count": 13,
+          "capital": 5738.279999999998
         }
       ]
     },
@@ -369,102 +317,138 @@
         {
           "client_id": 10,
           "portfolio": {
-            "AMZN": {
-              "quantity": 56,
-              "average_price": 98.78
+            "CALM": {
+              "quantity": 19,
+              "average_price": 110.95
             },
-            "MOS": {
-              "quantity": 47,
-              "average_price": 102.73042553191488
+            "NVDA": {
+              "quantity": 12,
+              "average_price": 94.16166666666668
             },
-            "TMO": {
-              "quantity": 55,
-              "average_price": 100.04836363636365
-            },
-            "PEP": {
+            "UNH": {
               "quantity": 9,
-              "average_price": 97.54
+              "average_price": 109.16
+            },
+            "COP": {
+              "quantity": 21,
+              "average_price": 107.79999999999998
+            },
+            "CVX": {
+              "quantity": 27,
+              "average_price": 104.40888888888888
+            },
+            "MSFT": {
+              "quantity": 2,
+              "average_price": 95.08
+            },
+            "PFE": {
+              "quantity": 11,
+              "average_price": 103.59454545454544
+            },
+            "BK": {
+              "quantity": 62,
+              "average_price": 106.98177419354838
+            },
+            "BG": {
+              "quantity": 7,
+              "average_price": 100.82
+            },
+            "SLB": {
+              "quantity": 79,
+              "average_price": 106.97329113924052
             }
           },
-          "buy_transaction_count": 41,
+          "buy_transaction_count": 61,
           "sell_transaction_count": 7,
-          "capital": -6249.459999999998
+          "capital": -16220.54
         },
         {
           "client_id": 11,
           "portfolio": {
-            "TMO": {
-              "quantity": 22,
-              "average_price": 104.57954545454544
+            "CVX": {
+              "quantity": 13,
+              "average_price": 105.25846153846156
             },
-            "GS": {
-              "quantity": 21,
-              "average_price": 117.72190476190475
+            "CALM": {
+              "quantity": 24,
+              "average_price": 103.21916666666668
             },
-            "BK": {
-              "quantity": 10,
-              "average_price": 104.5
+            "NVDA": {
+              "quantity": 38,
+              "average_price": 99.5078947368421
             },
-            "MOS": {
-              "quantity": 64,
-              "average_price": 105.69718750000004
+            "SLB": {
+              "quantity": 47,
+              "average_price": 99.9372340425532
             },
-            "PEP": {
-              "quantity": 9,
-              "average_price": 100.97
+            "BMY": {
+              "quantity": 8,
+              "average_price": 102.94
             },
-            "AMZN": {
-              "quantity": 34,
-              "average_price": 99.65500000000002
+            "COP": {
+              "quantity": 23,
+              "average_price": 110.70521739130434
             },
-            "UL": {
-              "quantity": 6,
-              "average_price": 102.0
+            "PFE": {
+              "quantity": 24,
+              "average_price": 103.81208333333332
             }
           },
-          "buy_transaction_count": 46,
-          "sell_transaction_count": 9,
-          "capital": -8378.070000000003
+          "buy_transaction_count": 56,
+          "sell_transaction_count": 8,
+          "capital": -8129.069999999998
         },
         {
           "client_id": 12,
           "portfolio": {
-            "BAC": {
-              "quantity": 10,
-              "average_price": 94.13
-            },
-            "AMZN": {
-              "quantity": 55,
-              "average_price": 95.54836363636365
+            "CALM": {
+              "quantity": 51,
+              "average_price": 107.2641176470588
             },
             "BK": {
-              "quantity": 3,
-              "average_price": 105.17
+              "quantity": 66,
+              "average_price": 108.60560606060604
             },
-            "CALM": {
+            "COP": {
+              "quantity": 4,
+              "average_price": 110.45
+            },
+            "TSLA": {
               "quantity": 2,
-              "average_price": 106.93
+              "average_price": 109.59
             },
-            "TMO": {
-              "quantity": 37,
-              "average_price": 101.16756756756756
+            "PFE": {
+              "quantity": 24,
+              "average_price": 101.5725
             },
-            "MSFT": {
-              "quantity": 3,
-              "average_price": 102.0
+            "UNH": {
+              "quantity": 5,
+              "average_price": 99.37
             },
-            "UL": {
-              "quantity": 13,
-              "average_price": 102.0
+            "BP": {
+              "quantity": 11,
+              "average_price": 101.81363636363636
             },
-            "PEP": {
-              "quantity": 28,
-              "average_price": 92.4367857142857
+            "SLB": {
+              "quantity": 38,
+              "average_price": 110.2178947368421
+            },
+            "CVX": {
+              "quantity": 10,
+              "average_price": 106.64
+            },
+            "NVDA": {
+              "quantity": 19,
+              "average_price": 100.21473684210524
+            },
+            "HAL": {
+              "quantity": 4,
+              "average_price": 97.915
             }
           },
-          "buy_transaction_count": 47,
-          "sell_transaction_count": 5,
-          "capital": -3104.2200000000003
+          "buy_transaction_count": 62,
+          "sell_transaction_count": 6,
+          "capital": -15992.199999999995
         }
       ]
     },
@@ -474,102 +458,126 @@
         {
           "client_id": 13,
           "portfolio": {
-            "APPL": {
-              "quantity": 3,
-              "average_price": 92.93
+            "AGCO": {
+              "quantity": 54,
+              "average_price": 102.25833333333335
             },
-            "AMZN": {
-              "quantity": 39,
-              "average_price": 100.09589743589744
+            "PEP": {
+              "quantity": 12,
+              "average_price": 97.795
+            },
+            "TFC": {
+              "quantity": 7,
+              "average_price": 98.67
+            },
+            "USB": {
+              "quantity": 25,
+              "average_price": 123.092
+            },
+            "CVX": {
+              "quantity": 10,
+              "average_price": 124.95
             },
             "CF": {
-              "quantity": 22,
-              "average_price": 98.02090909090911
+              "quantity": 16,
+              "average_price": 117.87
             },
-            "OXY": {
-              "quantity": 12,
-              "average_price": 104.6
+            "PFE": {
+              "quantity": 23,
+              "average_price": 100.38260869565217
             }
           },
-          "buy_transaction_count": 42,
+          "buy_transaction_count": 47,
           "sell_transaction_count": 12,
-          "capital": 1138.5499999999977
+          "capital": -6649.0199999999995
         },
         {
           "client_id": 14,
           "portfolio": {
-            "AMZN": {
-              "quantity": 1,
-              "average_price": 99.71
+            "OXY": {
+              "quantity": 7,
+              "average_price": 123.93
+            },
+            "IBM": {
+              "quantity": 2,
+              "average_price": 96.65
+            },
+            "JNJ": {
+              "quantity": 3,
+              "average_price": 96.09999999999998
+            },
+            "PEP": {
+              "quantity": 7,
+              "average_price": 78.52
+            },
+            "AGCO": {
+              "quantity": 26,
+              "average_price": 97.7296153846154
+            },
+            "BAC": {
+              "quantity": 2,
+              "average_price": 94.81
+            },
+            "CVX": {
+              "quantity": 7,
+              "average_price": 106.64
+            },
+            "USB": {
+              "quantity": 17,
+              "average_price": 113.14117647058823
             },
             "CF": {
-              "quantity": 9,
-              "average_price": 103.39
+              "quantity": 22,
+              "average_price": 122.675
             },
-            "OXY": {
-              "quantity": 102,
-              "average_price": 102.93088235294115
-            },
-            "MCD": {
-              "quantity": 5,
-              "average_price": 87.12
-            },
-            "CALM": {
-              "quantity": 4,
-              "average_price": 118.42
-            },
-            "MS": {
-              "quantity": 27,
-              "average_price": 104.21037037037038
-            },
-            "TOT": {
-              "quantity": 1,
-              "average_price": 101.39
-            },
-            "FMC": {
-              "quantity": 17,
-              "average_price": 106.80058823529411
+            "PFE": {
+              "quantity": 15,
+              "average_price": 102.0
             }
           },
-          "buy_transaction_count": 42,
-          "sell_transaction_count": 5,
-          "capital": -6592.489999999999
+          "buy_transaction_count": 40,
+          "sell_transaction_count": 13,
+          "capital": -2042.52
         },
         {
           "client_id": 15,
           "portfolio": {
-            "HAL": {
-              "quantity": 36,
-              "average_price": 100.09000000000002
+            "USB": {
+              "quantity": 12,
+              "average_price": 111.68
             },
-            "APPL": {
+            "PEP": {
+              "quantity": 55,
+              "average_price": 91.45272727272727
+            },
+            "JNJ": {
+              "quantity": 41,
+              "average_price": 103.07439024390244
+            },
+            "TFC": {
               "quantity": 4,
-              "average_price": 101.64
+              "average_price": 99.82
             },
-            "AMZN": {
-              "quantity": 47,
-              "average_price": 93.89085106382976
+            "AGCO": {
+              "quantity": 9,
+              "average_price": 104.5877777777778
             },
-            "GS": {
-              "quantity": 5,
-              "average_price": 89.2
-            },
-            "HD": {
-              "quantity": 10,
-              "average_price": 111.27
-            },
-            "SBUX": {
-              "quantity": 6,
-              "average_price": 113.87
+            "PFE": {
+              "quantity": 52,
+              "average_price": 101.15903846153846
             },
             "CF": {
-              "quantity": 32,
-              "average_price": 103.05375
+              "quantity": 13,
+              "average_price": 114.1153846153846
+            },
+            "CTVA": {
+              "quantity": 4,
+              "average_price": 129.63
             }
           },
-          "buy_transaction_count": 44,
-          "sell_transaction_count": 8,
-          "capital": -4019.9099999999994
+          "buy_transaction_count": 53,
+          "sell_transaction_count": 10,
+          "capital": -9698.95
         }
       ]
     }

@@ -33,48 +33,4 @@ impl Portfolio {
             *entry += quantity_change as u64;
         }
     }
-    
-
-    // /// Get the quantity of a specific stock.
-    // pub fn get_quantity(&self, stock_symbol: &str) -> u64 {
-    //     *self.holdings.get(stock_symbol).unwrap_or(&0)
-    // }
-
-    // /// Calculate the total value of the portfolio based on current prices.
-    // pub fn get_total_value(&self, current_prices: &HashMap<String, f64>) -> f64 {
-    //     self.holdings
-    //         .iter()
-    //         .map(|(symbol, qty)| {
-    //             let price = current_prices.get(symbol).cloned().unwrap_or(0.0);
-    //             price * (*qty as f64)
-    //         })
-    //         .sum()
-    // }
-
-    // /// Get the holdings as a readable format.
-    // pub fn get_holdings(&self) -> &HashMap<String, u64> {
-    //     &self.holdings
-    // }
-
-    // /// Check if a stock is held in the portfolio.
-    // pub fn can_sell(&self, stock_symbol: &str, quantity: u64) -> bool {
-    //     self.get_quantity(stock_symbol) >= quantity
-    // }
-
-    // // The calculated value of the portfolio based on the current market prices.
-    // pub fn calculate_dynamic_value(&self, current_prices: &HashMap<String, f64>) -> f64 {
-    //     self.holdings
-    //         .iter()
-    //         .map(|(symbol, &qty)| {
-    //             current_prices
-    //                 .get(symbol)
-    //                 .map(|&price| price * qty as f64)
-    //                 .unwrap_or(0.0)
-    //         })
-    //         .sum()
-    // }
-
-    // pub fn remove_stock(&mut self, stock_symbol: &str) {
-    //     self.holdings.remove(stock_symbol);
-    // }
 }

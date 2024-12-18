@@ -77,7 +77,7 @@ async fn main() {
         consumer::run_consumer(price_tx.clone()).await;
     });
 
-    //consumer_handle.await.unwrap();//过后用这个 不要order handle //ignore
+    //consumer_handle.await.unwrap();//过后用这个 不要order handle
     // 10. Start the order consumer (yikai side, reject or complete the orders and send to kafka)
     let order_consumer_handle = tokio::spawn(async move {
         order_consumer::start_order_consumer().await;

@@ -61,7 +61,7 @@ impl Client {
         broker_id: u64,
         stock_data: Arc<Mutex<HashMap<String, f64>>>,
         global_order_counter: Arc<AtomicU64>,
-        json_file_path: &str, // Path to the client holdings JSON file
+        json_file_path: &str, 
         upper_threshold: f64,
         lower_threshold: f64,
         max_orders: usize, 

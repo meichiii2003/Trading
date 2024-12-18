@@ -69,8 +69,6 @@ impl Broker {
         }
     }
 
-    
-
 
     pub async fn start(&mut self, producer: rdkafka::producer::FutureProducer) {
         let stock_data = self.stock_data.clone();
@@ -82,8 +80,6 @@ impl Broker {
         let mut price_rx = self.price_rx.resubscribe();
         tokio::spawn({
             let stock_data = stock_data.clone();
-            //let clients = clients.clone();
-            //let broker_id = broker_id;
             async move {
                 while let Ok(price_update) = price_rx.recv().await {
                     let mut stock_data_guard = stock_data.lock().await;
@@ -105,20 +101,29 @@ impl Broker {
                 break; // Exit the loop if the stop signal is set
             }
             for client in &self.clients {
-                let mut client = client.lock().await;
-                client.generate_order(self.id, self.stock_data.clone(), global_order_counter.clone(),"src/data/client_holdings.json", 5.0, 5.0,3,self.stop_signal.clone()).await;
-
-                let orders = client.collect_orders();
-                for order in orders {
-                    self.send_order_to_kafka(order, &producer).await;
-                }
-    
+                let client = client.clone();
+                let stock_data = self.stock_data.clone();
+                let global_order_counter = self.global_order_counter.clone();
+                let stop_signal = self.stop_signal.clone();
+                let broker_id = self.id;
+                let producer = producer.clone();
+                tokio::spawn(async move {
+                    let mut client = client.lock().await;
+                    client
+                        .generate_order(broker_id, stock_data, global_order_counter, "src/data/client_holdings.json", 5.0, 5.0, 3, stop_signal)
+                        .await;
+            
+                    let orders = client.collect_orders();
+                    for order in orders {
+                        Broker::send_order_to_kafka_static(order, &producer).await;
+                    }
+                });
             }
             tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         }
     }
 
-    async fn send_order_to_kafka(&self, order: Order, producer: &rdkafka::producer::FutureProducer) {
+    async fn send_order_to_kafka_static(order: Order, producer: &rdkafka::producer::FutureProducer) {
         let payload = serde_json::to_string(&order).expect("Failed to serialize order");
         producer
             .send(
@@ -199,7 +204,7 @@ impl Broker {
 
         // Send each order one by one
         for order in client_orders {
-            self.send_order_to_kafka(order, &producer).await;
+            Broker::send_order_to_kafka_static(order, &producer).await;
         }
     }
     
