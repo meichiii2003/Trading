@@ -44,6 +44,61 @@ pub async fn start_price_updater() {
         Stock::new("GOOG", 100.00),
         Stock::new("AMZN", 100.00),
         Stock::new("TSLA", 100.00),
+        Stock::new("NVDA", 100.00),
+        Stock::new("META", 100.00),
+        Stock::new("ORCL", 100.00),
+        Stock::new("IBM", 100.00),
+        Stock::new("AMD", 100.00),
+        Stock::new("ADM", 100.00),
+        Stock::new("BG", 100.00),
+        Stock::new("FMC", 100.00),
+        Stock::new("CTVA", 100.00),
+        Stock::new("DE", 100.00),
+        Stock::new("MOS", 100.00),
+        Stock::new("AGCO", 100.00),
+        Stock::new("CF", 100.00),
+        Stock::new("CALM", 100.00),
+        Stock::new("SMG", 100.00),
+        Stock::new("XOM", 100.00),
+        Stock::new("CVX", 100.00),
+        Stock::new("BP", 100.00),
+        Stock::new("COP", 100.00),
+        Stock::new("TOT", 100.00),
+        Stock::new("HAL", 100.00),
+        Stock::new("SLB", 100.00),
+        Stock::new("PSX", 100.00),
+        Stock::new("VLO", 100.00),
+        Stock::new("OXY", 100.00),
+        Stock::new("JNJ", 100.00),
+        Stock::new("PFE", 100.00),
+        Stock::new("MRK", 100.00),
+        Stock::new("UNH", 100.00),
+        Stock::new("ABBV", 100.00),
+        Stock::new("AMGN", 100.00),
+        Stock::new("TMO", 100.00),
+        Stock::new("BMY", 100.00),
+        Stock::new("GILD", 100.00),
+        Stock::new("BIIB", 100.00),
+        Stock::new("JPM", 100.00),
+        Stock::new("BAC", 100.00),
+        Stock::new("WFC", 100.00),
+        Stock::new("GS", 100.00),
+        Stock::new("MS", 100.00),
+        Stock::new("C", 100.00),
+        Stock::new("USB", 100.00),
+        Stock::new("BK", 100.00),
+        Stock::new("TFC", 100.00),
+        Stock::new("AXP", 100.00),
+        Stock::new("PG", 100.00),
+        Stock::new("KO", 100.00),
+        Stock::new("PEP", 100.00),
+        Stock::new("UL", 100.00),
+        Stock::new("NKE", 100.00),
+        Stock::new("COST", 100.00),
+        Stock::new("MCD", 100.00),
+        Stock::new("WMT", 100.00),
+        Stock::new("SBUX", 100.00),
+        Stock::new("HD", 100.00),
     ];
 
     // Send initial stock prices
@@ -65,10 +120,11 @@ pub async fn start_price_updater() {
             .expect("Failed to send price update");
     }
 
-    println!("Starting stock price updates for 30 seconds...");
+    //println!("Starting stock price updates for 50 seconds...");
+    
 
     // Timeout after 30 seconds
-    let result = timeout(Duration::from_secs(10), async {
+    let result = timeout(Duration::from_secs(50), async {
         loop {
             let num_updates = rng.gen_range(2..=4);
 
@@ -95,12 +151,12 @@ pub async fn start_price_updater() {
             }
 
             // Sleep between updates
-            sleep(Duration::from_secs(2)).await;
+            sleep(Duration::from_secs(1)).await;
         }
     })
     .await;
 
     if result.is_err() {
-        println!("30 seconds reached: Stopping stock price updates.");
+        println!("Stopping stock price updates.");
     }
 }

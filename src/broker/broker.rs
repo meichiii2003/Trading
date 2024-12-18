@@ -1,14 +1,14 @@
     // broker/broker.rs
 
-use rdkafka::producer::{self, FutureProducer, FutureRecord};
+use rdkafka::producer::FutureProducer;
 use tokio::sync::{broadcast::Receiver, Mutex};
-use std::fs::{File, OpenOptions};
-use std::io::{Read, Write};
+use std::sync::atomic::Ordering;
+use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, atomic::AtomicU64};
 use std::collections::HashMap;
 use crate::broker::update_client_portfolio_in_json;
-use crate::models::{Order, OrderAction, OrderType, PriceUpdate};
-use crate::broker::client::{BrokerRecords, Client};
+use crate::models::{Order, OrderAction, PriceUpdate};
+use crate::broker::client::Client;
 
 
 pub struct Broker {
@@ -17,6 +17,7 @@ pub struct Broker {
     price_rx: Receiver<PriceUpdate>, // Broadcast receiver for stock updates
     stock_data: Arc<Mutex<HashMap<String, f64>>>, // HashMap to store stock prices
     global_order_counter: Arc<AtomicU64>, // Shared counter for Order IDs
+    stop_signal: Arc<AtomicBool>, // Shared stop signal for the broker loop
 }
 
 pub fn initialize_brokers(
@@ -64,6 +65,7 @@ impl Broker {
             price_rx: price_tx.subscribe(), // Subscribe to the broadcast channel
             stock_data: Arc::new(Mutex::new(HashMap::new())), // Initialize an empty HashMap
             global_order_counter,
+            stop_signal: Arc::new(AtomicBool::new(false)), // Initialize the stop signal to false
         }
     }
 
@@ -72,16 +74,16 @@ impl Broker {
 
     pub async fn start(&mut self, producer: rdkafka::producer::FutureProducer) {
         let stock_data = self.stock_data.clone();
-        let clients = self.clients.clone();
+        //let clients = self.clients.clone();
         let global_order_counter = self.global_order_counter.clone(); // Access shared counter
-        let broker_id = self.id;
+        //let broker_id = self.id;
 
         // Task to listen for price updates
         let mut price_rx = self.price_rx.resubscribe();
         tokio::spawn({
             let stock_data = stock_data.clone();
-            let clients = clients.clone();
-            let broker_id = broker_id;
+            //let clients = clients.clone();
+            //let broker_id = broker_id;
             async move {
                 while let Ok(price_update) = price_rx.recv().await {
                     let mut stock_data_guard = stock_data.lock().await;
@@ -98,9 +100,13 @@ impl Broker {
 
         // Main broker loop for generating orders and sending to Kafka
         loop {
+            if self.stop_signal.load(Ordering::SeqCst) {
+                println!("Stopping broker loop");
+                break; // Exit the loop if the stop signal is set
+            }
             for client in &self.clients {
                 let mut client = client.lock().await;
-                client.generate_order(self.id, self.stock_data.clone(), global_order_counter.clone(),"src/data/client_holdings.json", 5.0, 5.0).await;
+                client.generate_order(self.id, self.stock_data.clone(), global_order_counter.clone(),"src/data/client_holdings.json", 5.0, 5.0,3,self.stop_signal.clone()).await;
 
                 let orders = client.collect_orders();
                 for order in orders {
@@ -108,81 +114,9 @@ impl Broker {
                 }
     
             }
-            tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         }
     }
-
-
-    // pub async fn process_order(&self, order: Order) {
-    //     match order.order_type {
-    //         OrderType::MarketBuy { price, take_profit, stop_loss } => {
-    //             println!(
-    //                 "Broker {} processing MarketBuy Order: Stock: {}, Price: {:.2}, Take Profit: {:?}, Stop Loss: {:?}",
-    //                 self.id, order.stock_symbol, price, take_profit, stop_loss
-    //             );
-    //             // Logic for market buy
-    //         }
-    //         OrderType::MarketSell { price, take_profit, stop_loss } => {
-    //             println!(
-    //                 "Broker {} processing MarketSell Order: Stock: {}, Price: {:.2}, Take Profit: {:?}, Stop Loss: {:?}",
-    //                 self.id, order.stock_symbol, price, take_profit, stop_loss
-    //             );
-    //             // Logic for market sell
-    //         }
-    //         OrderType::LimitBuy { price, take_profit, stop_loss } => {
-    //             println!(
-    //                 "Broker {} processing LimitBuy Order: Stock: {}, Price: {:.2}, Take Profit: {:?}, Stop Loss: {:?}",
-    //                 self.id, order.stock_symbol, price, take_profit, stop_loss
-    //             );
-    //             // Logic for limit buy
-    //         }
-    //         OrderType::LimitSell { price, take_profit, stop_loss } => {
-    //             println!(
-    //                 "Broker {} processing LimitSell Order: Stock: {}, Price: {:.2}, Take Profit: {:?}, Stop Loss: {:?}",
-    //                 self.id, order.stock_symbol, price, take_profit, stop_loss
-    //             );
-    //             // Logic for limit sell
-    //         }
-    //     }
-    // }
-
-    // pub async fn monitor_prices_and_execute_orders(
-    //     &self,
-    //     price_update: &PriceUpdate,
-    //     pending_orders: &mut Vec<Order>,) 
-    //     {
-    //     let stock_symbol = &price_update.name;
-    
-    //     // Check pending orders
-    //     for order in pending_orders.iter_mut() {
-    //         if order.stock_symbol == *stock_symbol {
-    //             match order.order_type {
-    //                 OrderType::MarketBuy { price, take_profit, stop_loss } => {
-    //                     if let Some(tp) = take_profit {
-    //                         if price_update.price >= tp {
-    //                             println!(
-    //                                 "Take Profit triggered for Order {}: Selling Stock {} at {:.2}",
-    //                                 order.order_id, stock_symbol, price_update.price
-    //                             );
-    //                             // Logic to execute take profit
-    //                         }
-    //                     }
-    //                     if let Some(sl) = stop_loss {
-    //                         if price_update.price <= sl {
-    //                             println!(
-    //                                 "Stop Loss triggered for Order {}: Selling Stock {} at {:.2}",
-    //                                 order.order_id, stock_symbol, price_update.price
-    //                             );
-    //                             // Logic to execute stop loss
-    //                         }
-    //                     }
-    //                 }
-    //                 // Similar handling for other order types
-    //                 _ => {}
-    //             }
-    //         }
-    //     }
-    // }
 
     async fn send_order_to_kafka(&self, order: Order, producer: &rdkafka::producer::FutureProducer) {
         let payload = serde_json::to_string(&order).expect("Failed to serialize order");
@@ -258,143 +192,6 @@ impl Broker {
         }
     }
     
-    
-    // pub async fn process_rejected_orders(&mut self, rejected_orders: Vec<Order>) {
-    //     for order in rejected_orders {
-    //         for client in &self.clients {
-    //             let mut client = client.lock().await;
-    //             if client.id == order.client_id {
-    //                 client.handle_rejected_order(&order);
-    //                 break;
-    //             }
-    //         }
-    //     }
-    // }
-
-
-    // pub async fn process_rejected_orders(
-    //     &mut self,
-    //     rejected_orders: Vec<Order>,
-    // ) {
-    //     let mut processed_orders = std::collections::HashSet::new(); // Track processed orders
-    
-    //     for rejected_order in rejected_orders {
-    //         // Skip already processed orders
-    //         if !processed_orders.insert(rejected_order.order_id.clone()) {
-    //             continue;
-    //         }
-    
-    //         println!("Processing rejected order: {:?}", rejected_order);
-    
-    //         // Step 1: Restore capital
-    //         for client in &self.clients {
-    //             let mut client = client.lock().await;
-    //             if client.id == rejected_order.client_id {
-    //                 let amount_to_restore = rejected_order.quantity as f64 * rejected_order.price;
-    //                 client.capital += amount_to_restore;
-    
-    //                 println!(
-    //                     "Client {}: Restored {:.2} to capital for rejected order {}. New capital: {:.2}",
-    //                     client.id, amount_to_restore, rejected_order.order_id, client.capital
-    //                 );
-    
-    //                 // Remove the rejected order from pending orders
-    //                 client.pending_orders.retain(|order| order.order_id != rejected_order.order_id);
-    //             }
-    //         }
-    //     }
-    // }
-    
-    
-
-                    // // Remove from in-memory broker records
-                    // client.broker_records.retain(|record| {
-                    //     if record.order_id == rejected_order.order_id {
-                    //         println!(
-                    //             "Removing in-memory record: {{ client_id: {}, order_id: {}, stop_loss: {:?}, take_profit: {:?} }}",
-                    //             record.client_id, record.order_id, record.stop_loss, record.take_profit
-                    //         );
-                    //         false
-                    //     } else {
-                    //         true
-                    //     }
-                    // });
-            
-
-
-        //     // Step 2: Read broker records from JSON file
-        //     let mut file = match File::open(broker_records_file) {
-        //         Ok(file) => file,
-        //         Err(err) => {
-        //             println!("Error opening JSON file: {}. Skipping order {}.", err, rejected_order.order_id);
-        //             continue;
-        //         }
-        //     };
-
-        //     let mut json_data = String::new();
-        //     if let Err(err) = file.read_to_string(&mut json_data) {
-        //         println!("Error reading JSON file: {}. Skipping order {}.", err, rejected_order.order_id);
-        //         continue;
-        //     }
-
-        //     let mut broker_records: BrokerRecords = match serde_json::from_str(&json_data) {
-        //         Ok(records) => records,
-        //         Err(err) => {
-        //             println!("Error parsing JSON file: {}. Skipping order {}.", err, rejected_order.order_id);
-        //             continue;
-        //         }
-        //     };
-
-        //     // Step 3: Remove the rejected order from broker records
-        //     let initial_count = broker_records.records.len();
-        //     broker_records.records.retain(|record| record.order_id != rejected_order.order_id);
-
-        //     if broker_records.records.len() < initial_count {
-        //         println!(
-        //             "Successfully removed rejected order {} from broker records JSON.",
-        //             rejected_order.order_id
-        //         );
-        //     } else {
-        //         println!(
-        //             "Order {} not found in broker records JSON. No removal performed.",
-        //             rejected_order.order_id
-        //         );
-        //     }
-
-        //     // Step 4: Write updated records back to the JSON file
-        //     let updated_json = match serde_json::to_string_pretty(&broker_records) {
-        //         Ok(json) => json,
-        //         Err(err) => {
-        //             println!(
-        //                 "Error serializing updated JSON: {}. Skipping write for order {}.",
-        //                 err, rejected_order.order_id
-        //             );
-        //             continue;
-        //         }
-        //     };
-
-        //     if let Err(err) = OpenOptions::new()
-        //         .write(true)
-        //         .truncate(true)
-        //         .open(broker_records_file)
-        //         .and_then(|mut file| file.write_all(updated_json.as_bytes()))
-        //     {
-        //         println!(
-        //             "Error writing updated JSON file: {}. Skipping write for order {}.",
-        //             err, rejected_order.order_id
-        //         );
-        //     } else {
-        //         println!(
-        //             "Broker records JSON updated successfully after removing order {}.",
-        //             rejected_order.order_id
-        //         );
-        //     }
-        // }
-    
-
-       
-
-
     pub async fn process_client_orders(&self, client: &Arc<Mutex<Client>>, producer: &FutureProducer) {
         // Collect orders from the client
         let mut client = client.lock().await;

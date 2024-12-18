@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fs::{File, OpenOptions};
+use std::fs::File;
 use std::io::{Read, Write};
 
 #[derive(Serialize, Deserialize)]
@@ -61,7 +61,7 @@ pub fn reset_client_holdings_json(file_path: &str, total_brokers: u64, clients_p
     file.write_all(json_data.as_bytes())
         .expect("Failed to write to JSON file");
 
-    println!("JSON file reset with empty portfolios, transaction counts, and initial capital.");
+    //println!("JSON file reset with empty portfolios, transaction counts, and initial capital.");
 }
 
 
@@ -175,9 +175,6 @@ pub async fn update_client_portfolio_in_json(
     if let Err(e) = File::create(file_path).and_then(|mut f| f.write_all(updated_json.as_bytes())) {
         println!("Error writing updated JSON data: {}", e);
     } 
-    // else {
-    //     println!("Successfully updated JSON for client ID {}", client_id);
-    // }
 }
 
 

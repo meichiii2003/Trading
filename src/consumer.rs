@@ -1,11 +1,12 @@
+use colored::Colorize;
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::{Consumer, StreamConsumer};
 use rdkafka::Message;
-use serde::{Deserialize, Serialize};
 use serde_json;
+use tokio::time::timeout;
 use std::collections::HashMap;
-use std::fs::{self, OpenOptions};
-use std::io::Write;
+use std::fs::{self};
+use std::time::Duration;
 use tokio_stream::StreamExt;
 use crate::models::PriceUpdate;
 
@@ -24,22 +25,17 @@ pub async fn run_consumer(price_tx: tokio::sync::broadcast::Sender<PriceUpdate>)
     // Subscribe to the 'stock' topic
     consumer.subscribe(&["stock"]).expect("Can't subscribe to specified topic");
 
-    println!("Consumer started, waiting for messages...");
+    //println!("Consumer started, waiting for messages...");
 
     let mut message_stream = consumer.stream();
 
-    // Ensure the JSON file exists
-    //initialize_json_storage().await;
-
-    // Channel to broadcast price updates
-    //let (price_tx, mut price_rx) = tokio::sync::mpsc::channel(100);
-
-    // Continuously consume messages
+    // Continuously consume message
+    let result = timeout(Duration::from_secs(50), async {
     while let Some(message) = message_stream.next().await { 
         match message {
             Ok(m) => {
                 if let Some(payload) = m.payload() {
-                    println!("Stock: {}", String::from_utf8_lossy(payload));
+                    println!("{}", format!("Stock: {}", String::from_utf8_lossy(payload)).bold().white());
 
                     // Deserialize the payload into a Vec<PriceUpdate>
                     match serde_json::from_slice::<PriceUpdate>(payload) {
@@ -64,6 +60,12 @@ pub async fn run_consumer(price_tx: tokio::sync::broadcast::Sender<PriceUpdate>)
                 eprintln!("Error while consuming from stream: {:?}", e);
             }
         }
+    }
+});
+
+    // Handle timeout
+    if result.await.is_err() {
+        println!("Stopping Kafka consumer.");
     }
 }
 

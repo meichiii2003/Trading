@@ -1,0 +1,133 @@
+use std::collections::HashMap;
+
+use rdkafka::config::ClientConfig;
+use rdkafka::producer::{FutureProducer, FutureRecord};
+use serde::{Serialize};
+use tokio;
+use chrono;
+use rand::random;
+
+#[derive(Serialize, Debug)]
+struct PriceUpdate {
+    name: String,
+    price: f64
+}
+
+#[derive(Serialize, Debug)]
+struct Transaction {
+    action: String,  // "buy" or "sell"
+    name: String,
+    amount: u32,
+    price: f64,
+    timestamp: i64,
+}
+
+#[tokio::main]
+async fn main() {
+    // Create the producer to send stock price updates
+    let producer: FutureProducer = ClientConfig::new()
+        .set("bootstrap.servers", "localhost:9092") // Connect to Kafka broker
+        .create()
+        .expect("Failed to create producer");
+
+    // Kafka topic where stock price updates will be sent
+    let topic = "stock";
+
+    // Initialize stock prices for 5 stocks
+    let mut stock_prices: HashMap<String, f64> = HashMap::new();
+    let stock_symbols = vec!["AAPL", "GOOG", "MSFT", "AMZN", "TSLA"];
+    for &symbol in &stock_symbols {
+        stock_prices.insert(symbol.to_string(), 150.0); // Start all stocks at a base price of 150.0
+    }
+
+
+    // Infinite loop to continuously send price updates
+    loop {
+        // // Generate a random transaction (buy or sell)
+        // let transaction = generate_transaction("AAPL"); // Example symbol: "AAPL"
+
+        // // Update the price based on the transaction
+        // let updated_price = update_price(150.0, &transaction); // Initial price is 150.0
+
+        // // Create the updated price
+        // let updated_price_update = PriceUpdate {
+        //     name: transaction.name.clone(),
+        //     price: updated_price
+        // };
+
+        // // Serialize the updated price message
+        // let payload = serde_json::to_string(&updated_price_update)
+        //     .expect("Failed to serialize updated price");
+
+        // // Send the updated price to Kafka topic
+        // producer
+        //     .send(
+        //         FutureRecord::to(topic)
+        //             .key(&updated_price_update.name)
+        //             .payload(&payload),
+        //         rdkafka::util::Timeout::Never,
+        //     )
+        //     .await
+        //     .expect("Failed to send updated price");
+
+        // println!("Sent updated price: {:?}", updated_price_update);
+
+        // // Wait before sending the next update (simulate some delay)
+        // tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+
+        for symbol in &stock_symbols {
+            if let Some(current_price) = stock_prices.get_mut(*symbol) {
+                // Update the stock price with a random fluctuation
+                *current_price = update_price(*current_price);
+
+                // Create the updated price message
+                let updated_price = PriceUpdate {
+                    name: symbol.to_string(),
+                    price: *current_price,
+                };
+
+                // Serialize the updated price message
+                let payload = serde_json::to_string(&updated_price)
+                    .expect("Failed to serialize updated price");
+
+                // Send the updated price to Kafka topic
+                producer
+                    .send(
+                        FutureRecord::to(topic)
+                            .key(&updated_price.name)
+                            .payload(&payload),
+                        rdkafka::util::Timeout::Never,
+                    )
+                    .await
+                    .expect("Failed to send updated price");
+
+                println!("Sent updated price: {:?}", updated_price);
+            }
+        }
+
+        // Wait before sending the next batch of updates (simulate delay)
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+    }
+}
+
+// Simulate a transaction (buy or sell)
+fn generate_transaction(symbol: &str) -> Transaction {
+    let action = if rand::random::<bool>() { "buy" } else { "sell" }; // Random action (buy/sell)
+    let price = 150.0 + rand::random::<f64>() * 10.0; // Random price around 150
+    let timestamp = chrono::Utc::now().timestamp(); // Current timestamp
+
+    Transaction {
+        action: action.to_string(),
+        name: symbol.to_string(),
+        amount: 10,  // Fixed amount for simplicity
+        price,
+        timestamp,
+    }
+}
+
+// Simulate price update with random fluctuation
+fn update_price(current_price: f64) -> f64 {
+    let change = rand::random::<f64>() * 2.0 - 1.0; // Random change between -1.0 and 1.0
+    let updated_price = current_price + change;
+    ((updated_price.max(0.0)) * 100.0).round() / 100.0 // Ensure price is >= 0 and round to 2 decimals
+}

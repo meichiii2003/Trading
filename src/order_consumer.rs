@@ -1,11 +1,14 @@
+use std::time::Duration;
+
 use rand::rngs::StdRng;
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::{CommitMode, Consumer, StreamConsumer};
 use rdkafka::message::Message;
 use rdkafka::producer::{FutureProducer, FutureRecord};
-use serde_json::Value;
+use tokio::time::timeout;
 use crate::models::{Order, OrderStatus};
 use rand::{Rng, SeedableRng};
+
 //yikai side
 pub async fn start_order_consumer() {
     let brokers = "localhost:9092"; // Kafka brokers
@@ -34,10 +37,11 @@ pub async fn start_order_consumer() {
     // Subscribe to the topic
     consumer.subscribe(&topics).expect("Failed to subscribe to topics");
 
-    println!("Order consumer started, waiting for messages...");
+    //println!("Order consumer started, waiting for messages...");
 
     let mut rng = StdRng::from_entropy();
 
+    let result = timeout(Duration::from_secs(50), async {
     loop {
         match consumer.recv().await {
             Ok(m) => {
@@ -87,6 +91,11 @@ pub async fn start_order_consumer() {
             }
         }
     }
+}).await;
+    // Handle timeout
+    if result.is_err() {
+        println!("Stopping order consumer.");
+    }
 }
 
 // Send Updated Orders Back to Kafka
@@ -106,10 +115,5 @@ pub async fn send_updated_order_to_kafka(
         )
         .await
         .map_err(|(err, _)| err)?;
-
-    // println!(
-    //     "Successfully sent updated {} to Kafka topic {}",
-    //     order.order_id, topic
-    // );
     Ok(())
 }
