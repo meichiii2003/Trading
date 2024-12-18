@@ -18,7 +18,6 @@ struct StockHolding {
 }
 
 
-
 #[derive(Serialize, Deserialize)]
 struct BrokerData {
     broker_id: u64,

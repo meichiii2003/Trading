@@ -33,7 +33,7 @@
             }
         }
     
-        pub async fn start(
+        pub async fn start_broker_task(
             &mut self,
             total_brokers: u64,
             total_updates: u64,

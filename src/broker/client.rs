@@ -1,10 +1,6 @@
 // broker/client.rs;
-
-use crate::broker::portfolio::Portfolio;
 use crate::models::{Order, OrderAction, OrderStatus, OrderType};
-
 use rand::Rng;
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs::File;
 use std::io::Read;
@@ -13,46 +9,21 @@ use std::collections::HashMap;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use std::fs;
 use colored::*;
 
 
 pub struct Client {
     pub id: u64,
-    pub initial_capital: f64,
-    pub capital: f64,
-    pub portfolio: Portfolio,
     pub pending_orders: Vec<Order>,
-    pub broker_records: Vec<BrokerRecord>,
-    pub current_orders: usize,
 }
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct BrokerRecord {
-    pub client_id: u64,
-    pub order_id: String,
-    pub stop_loss: Option<f64>,
-    pub take_profit: Option<f64>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct BrokerRecords {
-    pub records: Vec<BrokerRecord>,
-}
-
 
 impl Client {
     pub fn new(id: u64) -> Self {
         //let initial_capital = 10_000.0 + rand::thread_rng().gen_range(0.0..10_000.0); // Random initial capital between $10,000 and $20,000
-        let initial_capital = 20_000.0; // Fixed initial capital for simplicity
+        //let initial_capital = 20_000.0; // Fixed initial capital for simplicity
         Self {
             id,
-            initial_capital,
-            capital: initial_capital,
-            portfolio: Portfolio::new(),
             pending_orders: Vec::new(),
-            broker_records: Vec::new(),
-            current_orders: 0,
         }
     }
 
@@ -61,7 +32,7 @@ impl Client {
         broker_id: u64,
         stock_data: Arc<Mutex<HashMap<String, f64>>>,
         global_order_counter: Arc<AtomicU64>,
-        json_file_path: &str, 
+        json_file_path: &str, // Path to the client holdings JSON file
         upper_threshold: f64,
         lower_threshold: f64,
         max_orders: usize, 

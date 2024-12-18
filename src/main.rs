@@ -3,12 +3,12 @@
 
 mod stock_updater;
 
-mod consumer;
+mod stock_price_consumer;
 mod broker;
 mod models;
 mod performance;
-mod order_consumer;
-mod order_processor;
+mod order_matcher;
+mod order_status_receiver;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
@@ -42,7 +42,7 @@ async fn main() {
         let broker_clone = broker.clone();
         let handle = tokio::spawn(async move {
             let mut broker = broker_clone.lock().await;
-            broker.start(producer).await;
+            broker.start_broker_task(producer).await;
         });
 
         broker_handles.push(handle);
@@ -74,18 +74,18 @@ async fn main() {
 
     // 9. Start the Kafka consumer (i receive stock prices from kafka)
     let consumer_handle = tokio::spawn(async move {
-        consumer::run_consumer(price_tx.clone()).await;
+        stock_price_consumer::run_consumer(price_tx.clone()).await;
     });
 
     //consumer_handle.await.unwrap();//过后用这个 不要order handle
     // 10. Start the order consumer (yikai side, reject or complete the orders and send to kafka)
     let order_consumer_handle = tokio::spawn(async move {
-        order_consumer::start_order_consumer().await;
+        order_matcher::consume_and_route_orders().await;
     });
 
     // 11. Start the order processor (receive completed and rejected orders)
     let processor_handle = tokio::spawn(async move {
-        order_processor::start_order_processor().await;
+        order_status_receiver::order_status_receiver().await;
     });
     
     stop_signal.store(true, Ordering::SeqCst);  

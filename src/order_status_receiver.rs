@@ -9,7 +9,7 @@ use std::collections:: HashSet;
 use colored::*;
 //trading side
 
-pub async fn start_order_processor() {
+pub async fn order_status_receiver() {
     let brokers = "localhost:9092";
     let completed_topic = "completed_order";
     let rejected_topic = "rejected_order";

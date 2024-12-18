@@ -10,7 +10,7 @@ use crate::models::{Order, OrderStatus};
 use rand::{Rng, SeedableRng};
 
 //yikai side
-pub async fn start_order_consumer() {
+pub async fn consume_and_route_orders() {
     let brokers = "localhost:9092"; // Kafka brokers
     let group_id = "order-consumer-group"; // Consumer group ID
     let topics = vec!["orders"]; // Kafka topic to consume from

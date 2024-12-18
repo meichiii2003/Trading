@@ -1,13 +1,11 @@
-    // broker/broker.rs
+// broker/broker.rs
 
-use rdkafka::producer::FutureProducer;
 use tokio::sync::{broadcast::Receiver, Mutex};
 use std::sync::atomic::Ordering;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, atomic::AtomicU64};
 use std::collections::HashMap;
-use crate::broker::update_client_portfolio_in_json;
-use crate::models::{Order, OrderAction, PriceUpdate};
+use crate::models::{Order, PriceUpdate};
 use crate::broker::client::Client;
 
 
@@ -37,11 +35,6 @@ pub fn initialize_brokers(
 }
 
 impl Broker {
-    pub fn get_clients(&self) -> &Vec<Arc<Mutex<Client>>> {
-        &self.clients
-    }
-    
-
     pub fn new(
         id: u64,
         price_tx: tokio::sync::broadcast::Sender<PriceUpdate>,
@@ -70,11 +63,8 @@ impl Broker {
     }
 
 
-    pub async fn start(&mut self, producer: rdkafka::producer::FutureProducer) {
+    pub async fn start_broker_task(&mut self, producer: rdkafka::producer::FutureProducer) {
         let stock_data = self.stock_data.clone();
-        //let clients = self.clients.clone();
-        let global_order_counter = self.global_order_counter.clone(); // Access shared counter
-        //let broker_id = self.id;
 
         // Task to listen for price updates
         let mut price_rx = self.price_rx.resubscribe();
@@ -137,76 +127,5 @@ impl Broker {
 
         //println!("Broker {} sent order to Kafka: {:?}", self.id, order);
     }
-
-    pub async fn process_completed_orders(
-        &mut self,
-        completed_orders: Vec<Order>,
-        json_file_path: &str,
-    ) {
-        for completed_order in completed_orders {
-            for client in &self.clients {
-                let mut client = client.lock().await;
-                if client.id == completed_order.client_id {
-                    // Update the client's portfolio
-                    client
-                        .portfolio
-                        .update_holdings(&completed_order.stock_symbol, completed_order.quantity as i64);
-    
-                    let is_buy = completed_order.order_action == OrderAction::Buy;
-                    let total_cost = completed_order.quantity as f64 * completed_order.price;
-    
-                    if is_buy {
-                        // Deduct the cost from the client's capital
-                        if client.capital >= total_cost {
-                            client.capital -= total_cost;
-                        } else {
-                            println!(
-                                "Error: Client {} does not have sufficient capital for the completed buy order.",
-                                client.id
-                            );
-                            continue;
-                        }
-                    } else {
-                        // For sell orders, add the proceeds to the client's capital
-                        client.capital += total_cost;
-                    }
-    
-                    println!(
-                        "Client {}: Updated capital after completed order: {:.2}",
-                        client.id, client.capital
-                    );
-    
-                    // Update the JSON file with the new portfolio and capital
-                    update_client_portfolio_in_json(
-                        json_file_path,
-                        completed_order.client_id,
-                        completed_order.stock_symbol.clone(),
-                        completed_order.quantity,
-                        is_buy,
-                        completed_order.price, // Pass price per unit to update capital
-                    )
-                    .await;
-    
-                    // println!(
-                    //     "Updated Portfolio for Client {}: {:?}",
-                    //     client.id,
-                    //     client.portfolio.get_holdings()
-                    // );
-                }
-            }
-        }
-    }
-    
-    pub async fn process_client_orders(&self, client: &Arc<Mutex<Client>>, producer: &FutureProducer) {
-        // Collect orders from the client
-        let mut client = client.lock().await;
-        let client_orders = client.collect_orders();
-
-        // Send each order one by one
-        for order in client_orders {
-            Broker::send_order_to_kafka_static(order, &producer).await;
-        }
-    }
-    
 }
     
