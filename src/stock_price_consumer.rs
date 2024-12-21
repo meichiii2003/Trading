@@ -17,7 +17,7 @@ pub async fn run_consumer(price_tx: tokio::sync::broadcast::Sender<PriceUpdate>)
     let consumer: StreamConsumer = ClientConfig::new()
         .set("group.id", "stock-price-consumer-group")
         .set("bootstrap.servers", "localhost:9092")
-        .set("auto.offset.reset", "earliest")
+        .set("auto.offset.reset", "latest")
         .set("enable.auto.commit", "true")
         .create()
         .expect("Consumer creation failed");

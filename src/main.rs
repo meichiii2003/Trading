@@ -52,7 +52,7 @@ async fn main() {
     let json_file_path = "src/data/client_holdings.json"; // Path to the JSON file
     let clients_per_broker = 3;
     // Reset all client portfolios to empty
-    reset_client_holdings_json(json_file_path, total_brokers, clients_per_broker);
+    //reset_client_holdings_json(json_file_path, total_brokers, clients_per_broker);
 
     // 6. Create the Kafka producer
     // Start the order processor, to send order to kafka i think
@@ -73,25 +73,25 @@ async fn main() {
     });
 
     // 9. Start the Kafka consumer (i receive stock prices from kafka)
-    let consumer_handle = tokio::spawn(async move {
+    let stock_price_consumer_handle = tokio::spawn(async move {
         stock_price_consumer::run_consumer(price_tx.clone()).await;
     });
 
     //consumer_handle.await.unwrap();//过后用这个 不要order handle
     // 10. Start the order consumer (yikai side, reject or complete the orders and send to kafka)
-    let order_consumer_handle = tokio::spawn(async move {
+    let order_matcher_handle = tokio::spawn(async move {
         order_matcher::consume_and_route_orders().await;
     });
 
     // 11. Start the order processor (receive completed and rejected orders)
-    let processor_handle = tokio::spawn(async move {
+    let order_status_receiver_handle = tokio::spawn(async move {
         order_status_receiver::order_status_receiver().await;
     });
     
     stop_signal.store(true, Ordering::SeqCst);  
 
     // 12. Wait for all broker tasks to complete
-    let _ = tokio::join!(stock_updater_handle, processor_handle, consumer_handle, order_consumer_handle);
+    let _ = tokio::join!(stock_updater_handle, stock_price_consumer_handle, order_matcher_handle, order_status_receiver_handle);
     //broker.stop();
     
     // 13. Generate client performance report

@@ -100,12 +100,13 @@ impl Broker {
                 tokio::spawn(async move {
                     let mut client = client.lock().await;
                     client
-                        .generate_order(broker_id, stock_data, global_order_counter, "src/data/client_holdings.json", 5.0, 5.0, 3, stop_signal)
+                        .generate_order(broker_id, stock_data, global_order_counter, 
+                        "src/data/client_holdings.json", 5.0, 5.0, 1, stop_signal)
                         .await;
             
                     let orders = client.collect_orders();
                     for order in orders {
-                        Broker::send_order_to_kafka_static(order, &producer).await;
+                        Broker::send_order_to_kafka(order, &producer).await;
                     }
                 });
             }
@@ -113,7 +114,7 @@ impl Broker {
         }
     }
 
-    async fn send_order_to_kafka_static(order: Order, producer: &rdkafka::producer::FutureProducer) {
+    async fn send_order_to_kafka(order: Order, producer: &rdkafka::producer::FutureProducer) {
         let payload = serde_json::to_string(&order).expect("Failed to serialize order");
         producer
             .send(

@@ -46,65 +46,41 @@ pub async fn order_status_receiver() {
         let completed_task = tokio::spawn({
             let json_file_path = "src/data/client_holdings.json";
             async move {
-            loop {
-                match completed_consumer.recv().await {
-                    Ok(m) => {
-                        if let Some(payload) = m.payload() {
-                            let message = String::from_utf8_lossy(payload);
+                loop {
+                    match completed_consumer.recv().await {
+                        Ok(m) => {
+                            if let Some(payload) = m.payload() {
+                                let message = String::from_utf8_lossy(payload);
 
-                            if let Ok(order) = serde_json::from_str::<Order>(&message) {
-                                match order.order_action {
-                                    OrderAction::Buy => {
-                                        println!(
-                                            "{}",
-                                            format!("Completed Buy Order Execute: {:?}", order)
-                                                .bright_cyan()
-                                                .bold()
-                                        );
+                                if let Ok(order) = serde_json::from_str::<Order>(&message) {
+                                    match order.order_action {
+                                        OrderAction::Buy => {
+                                            println!("{}",format!("Completed Buy Order Execute: {:?}", order).bright_cyan().bold());
+                                        }
+                                        OrderAction::Sell => {
+                                            println!("{}",format!("Completed Sell Order Execute: {:?}", order).bright_magenta().bold());
+                                        }
+                                        _ => {
+                                            println!("Invalid order action for order ID {}: {:?}",order.order_id, order.order_action);
+                                            continue;
+                                        }
                                     }
-                                    OrderAction::Sell => {
-                                        println!(
-                                            "{}",
-                                            format!("Completed Sell Order Execute: {:?}", order)
-                                                .bright_magenta()
-                                                .bold()
-                                        );
-                                    }
-                                    _ => {
-                                        println!(
-                                            "Invalid order action for order ID {}: {:?}",
-                                            order.order_id, order.order_action
-                                        );
-                                        continue;
-                                    }
+
+                                    update_client_portfolio_in_json(json_file_path,order.client_id,order.stock_symbol.clone(),
+                                    order.quantity,matches!(order.order_action, OrderAction::Buy), order.price,).await;
+                                } else {
+                                    println!("Failed to parse order message: {}", message);
                                 }
-
-                                // Unified portfolio update
-                                update_client_portfolio_in_json(
-                                    json_file_path,
-                                    order.client_id,
-                                    order.stock_symbol.clone(),
-                                    order.quantity,
-                                    matches!(order.order_action, OrderAction::Buy), // Pass `true` for Buy, `false` for Sell
-                                    order.price,
-                                )
-                                .await;
-                            } else {
-                                println!("Failed to parse order message: {}", message);
                             }
+                            completed_consumer.commit_message(&m, CommitMode::Async).unwrap();
                         }
-
-                        completed_consumer
-                            .commit_message(&m, CommitMode::Async)
-                            .unwrap();
-                    }
-                    Err(err) => {
-                        println!("Kafka error on completed topic: {}", err);
+                        Err(err) => {
+                            println!("Kafka error on completed topic: {}", err);
+                        }
                     }
                 }
             }
-        }
-    });
+        });
 
     // Process rejected orders
     let rejected_task =tokio::spawn({
